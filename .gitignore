@@ -1,0 +1,6 @@
+node_modules/
+test_*.mjs
+test_*.py
+package.json
+package-lock.json
+.DS_Store
