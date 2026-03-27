@@ -1,0 +1,31 @@
+One-click extraction of any web page's content as a clean Markdown (.md) file.
+
+Page to Markdown uses Mozilla's Readability engine to intelligently strip away ads, navigation, sidebars, and other noise — leaving only the article content. Then it converts the clean HTML to well-formatted Markdown with proper headings, links, images, and code blocks.
+
+HOW IT WORKS
+1. Navigate to any article, blog post, or documentation page
+2. Click the Page to Markdown icon in your toolbar
+3. Click "Extract .md" — done. Your Markdown file downloads instantly.
+
+WHAT YOU GET
+Each extracted file includes YAML front matter with the page title, author, source URL, and extraction timestamp — perfect for static site generators, Obsidian, Notion imports, or any Markdown-based workflow.
+
+FEATURES
+• Smart content extraction — powered by Mozilla Readability, the same engine behind Firefox Reader View
+• Clean Markdown output — ATX headings, fenced code blocks, proper link formatting
+• YAML front matter — title, author, source URL, timestamp
+• Image deduplication — handles lazy-loading markup that creates duplicate images
+• Hebrew & RTL support — full Unicode filename and content support
+• Zero cloud dependencies — everything runs locally in your browser, no data leaves your machine
+
+PRIVACY
+Page to Markdown requires only the "activeTab" permission — it can only access the page you're currently viewing, and only when you click the extension icon. No data is collected, no analytics, no cloud APIs. The source code is fully open on GitHub.
+
+PERFECT FOR
+• Developers saving documentation and Stack Overflow answers
+• Researchers archiving articles for reference
+• Writers collecting source material
+• Anyone building a personal knowledge base in Markdown
+
+OPEN SOURCE
+MIT License — https://github.com/TibetOS/page-to-markdown
