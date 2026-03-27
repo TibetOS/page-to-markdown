@@ -4,3 +4,7 @@ test_*.py
 package.json
 package-lock.json
 .DS_Store
+gh_*_linux_amd64/
+*.skill
+*.mp4
+site/.wrangler/

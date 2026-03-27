@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — Page to Markdown</title>
+  <meta name="description" content="Privacy policy for the Page to Markdown Chrome extension.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+
+    a.back {
+      display: inline-block;
+      color: #666;
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-bottom: 2rem;
+    }
+    a.back:hover { color: #999; }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .updated {
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 2.5rem;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-top: 2rem;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #999;
+      margin-bottom: 1rem;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 1rem;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 1.25rem;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #999;
+      margin-bottom: 0.35rem;
+    }
+
+    ul li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: #444;
+    }
+
+    code {
+      background: #1a1a1a;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem 2rem 2rem;
+      font-size: 0.8rem;
+      color: #444;
+    }
+    footer a { color: #666; text-decoration: none; }
+    footer a:hover { color: #999; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="/">&larr; Back to Page to Markdown</a>
+
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: March 27, 2026</p>
+
+    <h2>Overview</h2>
+    <p>Page to Markdown is a Chrome extension that extracts web page content and converts it to Markdown format. It is designed with privacy as a core principle — no data is collected, stored, or transmitted.</p>
+
+    <h2>Data Collection</h2>
+    <p>Page to Markdown does <strong style="color:#e5e5e5">not</strong> collect any data. Specifically:</p>
+    <ul>
+      <li>No personal information is collected</li>
+      <li>No browsing history is recorded</li>
+      <li>No analytics or tracking scripts are used</li>
+      <li>No cookies are set</li>
+      <li>No data is sent to any server</li>
+    </ul>
+
+    <h2>How It Works</h2>
+    <p>When you click the extension icon and choose to extract, the extension reads the content of your current tab using the <code>activeTab</code> permission. This content is processed entirely within your browser using bundled libraries (Readability.js and Turndown.js). The resulting Markdown file is downloaded directly to your device. No intermediate servers are involved.</p>
+
+    <h2>Permissions</h2>
+    <p>The extension requests only two permissions:</p>
+    <ul>
+      <li><code>activeTab</code> — allows reading the current page's content, only when you click the extension icon</li>
+      <li><code>scripting</code> — allows injecting the content extraction script into the active tab</li>
+    </ul>
+    <p>Both permissions are scoped to the active tab and are only invoked by explicit user action.</p>
+
+    <h2>Third-Party Services</h2>
+    <p>Page to Markdown does not use any third-party services, APIs, or cloud infrastructure. All processing is performed locally in your browser.</p>
+
+    <h2>Changes to This Policy</h2>
+    <p>If this policy changes, the updated version will be posted on this page with a revised date.</p>
+
+    <h2>Contact</h2>
+    <p>For questions about this privacy policy, reach out at <strong style="color:#e5e5e5">gal@traffko.com</strong>.</p>
+  </div>
+
+  <footer>
+    <a href="/">Page to Markdown</a> &middot; MIT License &middot; Built by TibetOS
+  </footer>
+</body>
+</html>

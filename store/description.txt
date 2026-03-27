@@ -28,4 +28,4 @@ PERFECT FOR
 • Anyone building a personal knowledge base in Markdown
 
 OPEN SOURCE
-MIT License — https://github.com/TibetOS/page-to-markdown
+MIT License
