@@ -5,8 +5,10 @@ One-click Chrome extension to extract any web page's content as a clean `.md` fi
 ## How It Works
 
 1. Click the extension icon on any page
-2. Click **"Extract .md"**
-3. Get a Markdown file with YAML front matter (title, author, source URL, timestamp)
+2. Choose an action:
+   - **⬇ Extract .md** — download a Markdown file with YAML front matter (title, author, source URL, timestamp)
+   - **📋 Copy Markdown** — copy the full Markdown to your clipboard
+   - **✨ Copy for AI** — copy token-lean Markdown (no front matter, no images) plus a token estimate, ready to paste into ChatGPT/Claude
 
 Under the hood: [Readability.js](https://github.com/mozilla/readability) strips ads/nav/junk, then [Turndown.js](https://github.com/mixmark-io/turndown) converts the clean HTML to Markdown.
 
@@ -25,6 +27,8 @@ Coming soon.
 
 - **Smart extraction** — Mozilla Readability strips ads, nav, footers, cookie banners
 - **Clean Markdown** — ATX headings, fenced code blocks, proper links
+- **One-click clipboard** — copy full Markdown, or token-lean Markdown formatted for AI chats
+- **Token estimate** — see roughly how much of your model's context a page will use
 - **YAML front matter** — title, author, source URL, extraction timestamp
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
@@ -53,9 +57,12 @@ Only `activeTab` + `scripting` — the extension can only access the page you're
 
 ## Roadmap
 
-- **v1.0** — Readability + Turndown extraction (current)
-- **v1.1** — Preview panel, settings, export format options
-- **v2.0** — Optional in-browser LLM (chrome.ai / WebLLM) for smarter cleanup on edge cases
+- **v1.0** — Readability + Turndown extraction
+- **v1.1** — Copy to clipboard + "Copy for AI" (token-lean output, token estimate) ✅
+- **Next** — Keyboard shortcut & context menu, selection-only clipping, preview panel, configurable front matter
+- **Later** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
+
+See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 
 ## License
 

@@ -21,20 +21,25 @@
       gap: 8px;
     }
     h1 span { font-size: 18px; }
-    #btn {
+    .btn {
       width: 100%;
       padding: 10px;
       border: none;
       border-radius: 8px;
-      background: #7c3aed;
       color: #fff;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: background 0.15s;
     }
-    #btn:hover { background: #6d28d9; }
-    #btn:disabled { background: #444; cursor: default; }
+    .btn + .btn { margin-top: 8px; }
+    #download { background: #7c3aed; }
+    #download:hover { background: #6d28d9; }
+    #copy { background: #2563eb; }
+    #copy:hover { background: #1d4ed8; }
+    #copyAI { background: #0d9488; }
+    #copyAI:hover { background: #0f766e; }
+    .btn:disabled { background: #444; cursor: default; }
     #status {
       margin-top: 10px;
       font-size: 12px;
@@ -47,7 +52,9 @@
 </head>
 <body>
   <h1><span>📄</span> Page to Markdown</h1>
-  <button id="btn">Extract .md</button>
+  <button id="download" class="btn">⬇ Extract .md</button>
+  <button id="copy" class="btn">📋 Copy Markdown</button>
+  <button id="copyAI" class="btn">✨ Copy for AI</button>
   <div id="status"></div>
   <script src="popup.js"></script>
 </body>
