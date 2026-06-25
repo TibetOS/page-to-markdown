@@ -152,7 +152,7 @@ compromising the open-source, local-first ethos.
 
 ## 7. The Roadmap
 
-Each item: **Why** (intelligence) · **Effort** (S/M/L) · **Risk**. Ordered by leverage.
+Each item: **Why** (intelligence) · **Effort** (S/M/L). Ordered by leverage. (Cross-cutting risks are collected in §9.)
 
 ### 🌊 Wave 1 — "Close the convenience gap" (v1.1–v1.3, ~weeks)
 *Goal: convert orphaned MarkDownload users and AI-first clippers with table-stakes features. Low risk, no new heavy deps.*
@@ -246,7 +246,7 @@ Three pillars to defend and amplify:
 - [Webpage to Markdown Chrome Extension: 7 Tested for 2026 (Web2MD)](https://web2md.org/blog/webpage-to-markdown-chrome-extension-2026-comparison)
 - [Defuddle — Get the main content of any page as Markdown (GitHub, kepano)](https://github.com/kepano/defuddle)
 - [Defuddle: The Next Generation of Web Content Extraction (HoangYell)](https://hoangyell.com/defuddle-explained/)
-- [Obsidian Web Clipper](https://obsidian.md/clipper) · [Steph Ango](https://stephango.com/obsidian-web-clipper)
+- [Obsidian Web Clipper (official)](https://obsidian.md/clipper)
 - [AI on Chrome — Built-in AI / Gemini Nano (Chrome for Developers)](https://developer.chrome.com/docs/ai/built-in)
 - [Markdown vs. HTML for LLM Context: Optimizing Performance & Cost (SearchCans)](https://www.searchcans.com/blog/markdown-vs-html-llm-context-optimization-2026/)
 - [URL to Markdown for LLM & RAG: Complete Guide 2026 (SearchCans)](https://www.searchcans.com/blog/ultimate-guide-url-markdown-llm-rag-2026/)
