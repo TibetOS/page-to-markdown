@@ -10,6 +10,10 @@ One-click Chrome extension to extract any web page's content as a clean `.md` fi
    - **📋 Copy Markdown** — copy the full Markdown to your clipboard
    - **✨ Copy for AI** — copy token-lean Markdown (no front matter, no images) plus a token estimate, ready to paste into ChatGPT/Claude
 
+Or skip the popup entirely:
+- **Keyboard shortcut** — `Ctrl+Shift+M` (`⌘+Shift+M` on Mac) opens the popup; customize at `chrome://extensions/shortcuts`
+- **Right-click menu** — *Page to Markdown* → download / copy the page, or **Copy selection as Markdown** when text is highlighted
+
 Under the hood: [Readability.js](https://github.com/mozilla/readability) strips ads/nav/junk, then [Turndown.js](https://github.com/mixmark-io/turndown) converts the clean HTML to Markdown.
 
 ## Install
@@ -29,6 +33,8 @@ Coming soon.
 - **Clean Markdown** — ATX headings, fenced code blocks, proper links
 - **One-click clipboard** — copy full Markdown, or token-lean Markdown formatted for AI chats
 - **Token estimate** — see roughly how much of your model's context a page will use
+- **Keyboard shortcut & context menu** — extract or copy without opening the popup
+- **Selection clipping** — highlight text, right-click, get just that part as Markdown
 - **YAML front matter** — title, author, source URL, extraction timestamp
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
@@ -53,13 +59,14 @@ Researchers discovered that smaller, more efficient models...
 
 ## Permissions
 
-Only `activeTab` + `scripting` — the extension can only access the page you're viewing, and only when you click the icon. No background tracking, no analytics.
+`activeTab` + `scripting` + `contextMenus`. The extension only touches a page when *you* invoke it (icon click, keyboard shortcut, or right-click menu) — `activeTab` grants access for that one action, so there are no broad host permissions, no background tracking, and no analytics. `contextMenus` only adds the right-click entries.
 
 ## Roadmap
 
 - **v1.0** — Readability + Turndown extraction
 - **v1.1** — Copy to clipboard + "Copy for AI" (token-lean output, token estimate) ✅
-- **Next** — Keyboard shortcut & context menu, selection-only clipping, preview panel, configurable front matter
+- **v1.2** — Keyboard shortcut, right-click context menu, selection-only clipping ✅
+- **Next** — Preview panel, configurable front matter, Firefox/Edge builds
 - **Later** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.

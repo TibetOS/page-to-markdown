@@ -22,31 +22,8 @@ async function extract() {
   return result;
 }
 
-// Sanitize a title into a safe .md filename (keeps Hebrew chars too).
-function toFilename(title) {
-  return (
-    title
-      .replace(/[^a-zA-Z0-9֐-׿\s-]/g, "") // keep Hebrew chars too
-      .replace(/\s+/g, "-")
-      .toLowerCase()
-      .slice(0, 80) + ".md"
-  );
-}
-
-// Strip the leading YAML front-matter block — LLMs don't need it.
-function stripFrontMatter(md) {
-  return md.replace(/^---\n[\s\S]*?\n---\n+/, "");
-}
-
-// Drop image markdown — images cost tokens and rarely help text models.
-function stripImages(md) {
-  return md.replace(/!\[[^\]]*\]\([^)]*\)/g, "").replace(/\n{3,}/g, "\n\n");
-}
-
-// Rough token estimate (~4 chars/token) — good enough to gauge context budget.
-function estimateTokens(text) {
-  return Math.ceil(text.length / 4);
-}
+// toFilename / stripFrontMatter / stripImages / estimateTokens / buildLeanMarkdown
+// live in shared.js (loaded before this script), shared with the service worker.
 
 async function copyToClipboard(text) {
   try {
@@ -130,10 +107,7 @@ copyAIBtn.addEventListener("click", async () => {
     const { markdown, title } = await extract();
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-    const body = stripImages(stripFrontMatter(markdown)).trim();
-    // Keep a single source line so the model knows the provenance.
-    const lean = `# ${title}\nSource: ${tab?.url || ""}\n\n${body}`;
-
+    const lean = buildLeanMarkdown(markdown, title, tab?.url);
     await copyToClipboard(lean);
     showSuccess(`Copied for AI — ~${estimateTokens(lean).toLocaleString()} tokens`);
   } catch (err) {
