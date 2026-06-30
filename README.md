@@ -35,7 +35,7 @@ Coming soon.
 - **Token estimate** — see roughly how much of your model's context a page will use
 - **Keyboard shortcut & context menu** — extract or copy without opening the popup
 - **Selection clipping** — highlight text, right-click, get just that part as Markdown
-- **YAML front matter** — title, author, source URL, extraction timestamp
+- **Rich, valid YAML front matter** — title, author, source, site, publish date, language, excerpt, timestamp — safely escaped so titles with `:`, quotes, or line breaks can't break the YAML
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -44,9 +44,13 @@ Coming soon.
 
 ```markdown
 ---
-title: "How AI Changes Everything"
+title: "How AI Changes Everything: A \"Deep\" Dive"
 author: "Jane Smith"
 source: "https://example.com/article"
+site: "Example News"
+published: "2026-03-25T08:00:00.000Z"
+lang: "en"
+excerpt: "Why smaller, more efficient models are reshaping the field."
 extracted: "2026-03-27T10:30:00.000Z"
 ---
 
@@ -66,7 +70,8 @@ Researchers discovered that smaller, more efficient models...
 - **v1.0** — Readability + Turndown extraction
 - **v1.1** — Copy to clipboard + "Copy for AI" (token-lean output, token estimate) ✅
 - **v1.2** — Keyboard shortcut, right-click context menu, selection-only clipping ✅
-- **Next** — Preview panel, configurable front matter, Firefox/Edge builds
+- **v1.3** — Rich, YAML-safe front matter (escaped values + site/date/lang/excerpt) ✅
+- **Next** — Preview panel, configurable front-matter fields, Firefox/Edge builds
 - **Later** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
