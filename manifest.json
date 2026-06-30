@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
   "name": "Page to Markdown",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "One-click extraction of any page's content as a clean .md file",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "contextMenus"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -16,5 +19,17 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+M",
+        "mac": "Command+Shift+M"
+      },
+      "description": "Open Page to Markdown"
+    },
+    "copy-page-markdown": {
+      "description": "Copy current page as Markdown"
+    }
   }
 }
