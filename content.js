@@ -64,8 +64,14 @@
     ["author", article.byline],
     ["source", location.href],
     ["site", article.siteName],
-    ["published", article.publishedTime],
-    ["lang", article.lang || document.documentElement.lang],
+    [
+      "published",
+      article.publishedTime ||
+        document.querySelector(
+          'meta[property="article:published_time"], meta[name="publish-date"], meta[itemprop="datePublished"]'
+        )?.content,
+    ],
+    ["lang", article.lang || document.documentElement?.lang],
     ["excerpt", article.excerpt],
     ["extracted", new Date().toISOString()],
   ];
