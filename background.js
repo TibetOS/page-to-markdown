@@ -3,7 +3,9 @@
 // the popup (content.js); clipboard writes and downloads run in the page,
 // where a DOM and the user gesture from the command/menu click are available.
 
-importScripts("shared.js");
+// Chrome/Edge load this as a service worker (importScripts available); Firefox
+// loads it as an event page with shared.js already injected via background.scripts.
+if (typeof importScripts === "function") importScripts("shared.js");
 
 const MENU = {
   download: "p2m-download",

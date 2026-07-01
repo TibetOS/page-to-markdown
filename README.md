@@ -19,14 +19,31 @@ Under the hood: [Readability.js](https://github.com/mozilla/readability) strips 
 
 ## Install
 
-### From source (Developer mode)
+### Chrome / Edge (from source)
 1. Clone this repo: `git clone https://github.com/TibetOS/page-to-markdown.git`
-2. Open `chrome://extensions/`
+2. Open `chrome://extensions/` (or `edge://extensions/`)
 3. Enable **Developer mode** (top right)
 4. Click **Load unpacked** → select the cloned folder
 
-### From Chrome Web Store
+Edge is Chromium-based, so the same folder loads unmodified.
+
+### Firefox (from source)
+1. Run `node scripts/build.mjs` to generate `dist/firefox/`
+2. Open `about:debugging#/runtime/this-firefox`
+3. Click **Load Temporary Add-on…** → pick `dist/firefox/manifest.json`
+
+Firefox uses a slightly different manifest (event-page background + `browser_specific_settings`); the build script generates it for you. Requires Firefox 121+.
+
+### From the stores
 Coming soon.
+
+## Building
+
+`node scripts/build.mjs` packages the extension into `dist/`:
+- `page-to-markdown-chrome-v<version>.zip` (also loads on Edge)
+- `page-to-markdown-firefox-v<version>.zip`
+
+No dependencies — just Node and the `zip` CLI.
 
 ## Features
 
@@ -76,8 +93,8 @@ Researchers discovered that smaller, more efficient models...
 - **v1.3** — Rich, YAML-safe front matter (escaped values + site/date/lang/excerpt) ✅
 - **v1.4** — Preview & edit panel with live word/token counts ✅
 - **v1.5** — Configurable front-matter fields (settings page) ✅
-- **Next** — Firefox/Edge builds
-- **Later** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
+- **v1.6** — Firefox & Edge builds (cross-browser packaging) ✅
+- **Next** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 

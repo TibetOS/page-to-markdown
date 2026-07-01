@@ -8,3 +8,4 @@ gh_*_linux_amd64/
 *.skill
 *.mp4
 site/.wrangler/
+dist/
