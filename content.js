@@ -44,16 +44,45 @@
   // Clean up excessive blank lines left after removals
   markdown = markdown.replace(/\n{3,}/g, "\n\n");
 
-  // Build the final .md with YAML-ish front matter
-  const frontMatter = [
-    "---",
-    `title: "${article.title?.replace(/"/g, '\\"') || ""}"`,
-    `author: "${article.byline || ""}"`,
-    `source: "${location.href}"`,
-    `extracted: "${new Date().toISOString()}"`,
-    "---",
-    "",
-  ].join("\n");
+  // Serialize a value as a safe double-quoted YAML scalar. Escapes
+  // backslashes/quotes, turns newlines & tabs into escape sequences, and
+  // drops other control characters — so titles with ":", quotes, or line
+  // breaks can't produce invalid YAML front matter.
+  const yamlString = (value) =>
+    `"${String(value ?? "")
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\r/g, "\\r")
+      .replace(/\n/g, "\\n")
+      .replace(/\t/g, "\\t")
+      .replace(/[\u0000-\u001F]/g, "")}"`;
+
+  // Build the front matter from whatever metadata Readability surfaced,
+  // emitting only fields that are actually present.
+  const fields = [
+    ["title", article.title || document.title],
+    ["author", article.byline],
+    ["source", location.href],
+    ["site", article.siteName],
+    [
+      "published",
+      article.publishedTime ||
+        document.querySelector(
+          'meta[property="article:published_time"], meta[name="publish-date"], meta[itemprop="datePublished"]'
+        )?.content,
+    ],
+    ["lang", article.lang || document.documentElement?.lang],
+    ["excerpt", article.excerpt],
+    ["extracted", new Date().toISOString()],
+  ];
+
+  const frontMatter =
+    "---\n" +
+    fields
+      .filter(([, value]) => value != null && String(value).trim() !== "")
+      .map(([key, value]) => `${key}: ${yamlString(value)}`)
+      .join("\n") +
+    "\n---\n\n";
 
   return {
     success: true,
