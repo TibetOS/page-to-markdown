@@ -9,6 +9,7 @@ One-click Chrome extension to extract any web page's content as a clean `.md` fi
    - **⬇ Extract .md** — download a Markdown file with YAML front matter (title, author, source URL, timestamp)
    - **📋 Copy Markdown** — copy the full Markdown to your clipboard
    - **✨ Copy for AI** — copy token-lean Markdown (no front matter, no images) plus a token estimate, ready to paste into ChatGPT/Claude
+   - **👁 Preview & edit** — review the Markdown in an editable pane (with live word/token counts), tweak it, then download or copy the result
 
 Or skip the popup entirely:
 - **Keyboard shortcut** — `Ctrl+Shift+M` (`⌘+Shift+M` on Mac) opens the popup; customize at `chrome://extensions/shortcuts`
@@ -32,6 +33,7 @@ Coming soon.
 - **Smart extraction** — Mozilla Readability strips ads, nav, footers, cookie banners
 - **Clean Markdown** — ATX headings, fenced code blocks, proper links
 - **One-click clipboard** — copy full Markdown, or token-lean Markdown formatted for AI chats
+- **Preview & edit** — review and tweak the Markdown before saving, with live word/token counts
 - **Token estimate** — see roughly how much of your model's context a page will use
 - **Keyboard shortcut & context menu** — extract or copy without opening the popup
 - **Selection clipping** — highlight text, right-click, get just that part as Markdown
@@ -71,7 +73,8 @@ Researchers discovered that smaller, more efficient models...
 - **v1.1** — Copy to clipboard + "Copy for AI" (token-lean output, token estimate) ✅
 - **v1.2** — Keyboard shortcut, right-click context menu, selection-only clipping ✅
 - **v1.3** — Rich, YAML-safe front matter (escaped values + site/date/lang/excerpt) ✅
-- **Next** — Preview panel, configurable front-matter fields, Firefox/Edge builds
+- **v1.4** — Preview & edit panel with live word/token counts ✅
+- **Next** — Configurable front-matter fields, Firefox/Edge builds
 - **Later** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
