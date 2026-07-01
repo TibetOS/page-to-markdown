@@ -60,8 +60,16 @@ function toFirefoxManifest(base) {
 
 function zipDir(dir, zipPath) {
   fs.rmSync(zipPath, { force: true });
-  // Zip the *contents* of dir (so the manifest sits at the archive root).
-  execSync(`cd "${dir}" && zip -qr -X "${zipPath}" .`);
+  try {
+    // Zip the *contents* of dir (so the manifest sits at the archive root).
+    // The cwd option is cross-platform and avoids drive-change issues on Windows.
+    execSync(`zip -qr -X "${zipPath}" .`, { cwd: dir, stdio: "pipe" });
+  } catch (err) {
+    console.error(`\nError: failed to create ${path.relative(root, zipPath)}.`);
+    console.error("Make sure the 'zip' command-line tool is installed and on your PATH");
+    console.error("(pre-installed on macOS/Linux; on Windows use Git Bash or WSL).\n");
+    throw err;
+  }
 }
 
 function build(name, manifestObj) {
