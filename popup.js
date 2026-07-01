@@ -5,6 +5,7 @@ const status = document.getElementById("status");
 const downloadBtn = document.getElementById("download");
 const copyBtn = document.getElementById("copy");
 const copyAIBtn = document.getElementById("copyAI");
+const obsidianBtn = document.getElementById("obsidian");
 const previewBtn = document.getElementById("preview-btn");
 const settingsBtn = document.getElementById("settings");
 
@@ -20,6 +21,7 @@ const labels = new Map([
   [downloadBtn, "⬇ Extract .md"],
   [copyBtn, "📋 Copy Markdown"],
   [copyAIBtn, "✨ Copy for AI"],
+  [obsidianBtn, "🟣 Send to Obsidian"],
   [previewBtn, "👁 Preview & edit"],
   [downloadEditedBtn, "⬇ Download"],
   [copyEditedBtn, "📋 Copy"],
@@ -134,6 +136,27 @@ copyAIBtn.addEventListener("click", async () => {
     const lean = buildLeanMarkdown(body, title, url);
     await copyToClipboard(lean);
     showSuccess(`Copied for AI — ~${estimateTokens(lean).toLocaleString()} tokens`);
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
+
+obsidianBtn.addEventListener("click", async () => {
+  setBusy(true, obsidianBtn, "Sending...");
+  try {
+    const result = await extract();
+    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const uri = buildObsidianUri(result.title, markdown, await getObsidianVault());
+    if (uri.length > OBSIDIAN_URI_LIMIT) {
+      // Too large for the obsidian:// protocol handler — hand off via clipboard.
+      await copyToClipboard(markdown);
+      showSuccess("Too large to send directly — copied to clipboard; paste into Obsidian.");
+    } else {
+      await chrome.tabs.create({ url: uri });
+      showSuccess("Sent to Obsidian.");
+    }
   } catch (err) {
     showError(err);
   } finally {

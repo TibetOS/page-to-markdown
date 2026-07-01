@@ -14,6 +14,7 @@ const DESCRIPTIONS = {
 
 const fieldsEl = document.getElementById("fields");
 const savedEl = document.getElementById("saved");
+const vaultEl = document.getElementById("vault");
 
 function render(enabled) {
   fieldsEl.replaceChildren();
@@ -42,12 +43,15 @@ async function save() {
   for (const key of FRONT_MATTER_FIELDS) {
     frontMatterFields[key] = document.getElementById(`f-${key}`).checked;
   }
-  await chrome.storage.sync.set({ frontMatterFields });
+  await chrome.storage.sync.set({ frontMatterFields, obsidianVault: vaultEl.value.trim() });
   savedEl.textContent = "Saved ✓";
   clearTimeout(save._t);
   save._t = setTimeout(() => (savedEl.textContent = ""), 1500);
 }
 
+vaultEl.addEventListener("change", save);
+
 (async () => {
   render(await getEnabledFields());
+  vaultEl.value = await getObsidianVault();
 })();

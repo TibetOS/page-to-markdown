@@ -9,6 +9,7 @@ One-click Chrome extension to extract any web page's content as a clean `.md` fi
    - **⬇ Extract .md** — download a Markdown file with YAML front matter (title, author, source URL, timestamp)
    - **📋 Copy Markdown** — copy the full Markdown to your clipboard
    - **✨ Copy for AI** — copy token-lean Markdown (no front matter, no images) plus a token estimate, ready to paste into ChatGPT/Claude
+   - **🟣 Send to Obsidian** — create a note straight in your vault via the `obsidian://` URI (set a default vault in settings)
    - **👁 Preview & edit** — review the Markdown in an editable pane (with live word/token counts), tweak it, then download or copy the result
 
 Or skip the popup entirely:
@@ -56,6 +57,7 @@ No dependencies — just Node and the `zip` CLI.
 - **Selection clipping** — highlight text, right-click, get just that part as Markdown
 - **Rich, valid YAML front matter** — title, author, source, site, publish date, language, excerpt, timestamp — safely escaped so titles with `:`, quotes, or line breaks can't break the YAML
 - **Configurable fields** — toggle which front-matter fields are included from the settings page
+- **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -94,7 +96,8 @@ Researchers discovered that smaller, more efficient models...
 - **v1.4** — Preview & edit panel with live word/token counts ✅
 - **v1.5** — Configurable front-matter fields (settings page) ✅
 - **v1.6** — Firefox & Edge builds (cross-browser packaging) ✅
-- **Next** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
+- **v1.7** — Send to Obsidian (`obsidian://` URI + default vault setting) ✅
+- **Next** — Defuddle extraction engine, send-to-Notion, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 

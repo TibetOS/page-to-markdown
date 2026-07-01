@@ -88,3 +88,27 @@ function buildLeanMarkdown(markdown, title, url) {
   const body = stripImages(stripFrontMatter(markdown)).trim();
   return `# ${title || "Untitled"}\nSource: ${url || ""}\n\n${body}`;
 }
+
+// Above this encoded-URI length, sending via obsidian:// becomes unreliable
+// (OS protocol-handler limits), so callers fall back to the clipboard.
+const OBSIDIAN_URI_LIMIT = 30000;
+
+// Build an obsidian://new URI that creates a note with the given content.
+// vault is optional — Obsidian uses the last-focused vault when it's omitted.
+function buildObsidianUri(title, content, vault) {
+  const params = new URLSearchParams();
+  if (vault) params.set("vault", vault);
+  params.set("name", (title || "page").slice(0, 120));
+  params.set("content", content);
+  return `obsidian://new?${params.toString()}`;
+}
+
+// The user's optional default Obsidian vault name.
+async function getObsidianVault() {
+  try {
+    const stored = await chrome.storage.sync.get("obsidianVault");
+    return (stored.obsidianVault || "").trim();
+  } catch {
+    return "";
+  }
+}
