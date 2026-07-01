@@ -146,6 +146,16 @@ function updateMeta() {
   meta.textContent = `${words.toLocaleString()} words · ~${estimateTokens(text).toLocaleString()} tokens`;
 }
 
+// Debounce so the word/token count doesn't recompute on every keystroke
+// (avoids typing jank on large articles).
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
 function showPreview() {
   mainView.hidden = true;
   previewView.hidden = false;
@@ -167,7 +177,7 @@ previewBtn.addEventListener("click", async () => {
   }
 });
 
-editor.addEventListener("input", updateMeta);
+editor.addEventListener("input", debounce(updateMeta, 150));
 
 backBtn.addEventListener("click", () => {
   previewView.hidden = true;
