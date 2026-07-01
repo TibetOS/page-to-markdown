@@ -22,7 +22,7 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// Run Readability + Turndown in the tab and return { markdown, title }.
+// Run Readability + Turndown in the tab and return { body, title, meta }.
 async function extractArticle(tabId) {
   const results = await chrome.scripting.executeScript({
     target: { tabId },
@@ -101,15 +101,18 @@ async function copySelection(tab) {
 }
 
 async function copyPage(tab, forAI) {
-  const { markdown, title } = await extractArticle(tab.id);
-  const text = forAI ? buildLeanMarkdown(markdown, title, tab.url) : markdown;
+  const result = await extractArticle(tab.id);
+  const text = forAI
+    ? buildLeanMarkdown(result.body, result.title, tab.url)
+    : assembleMarkdown(result, await getEnabledFields());
   const ok = await runInPage(tab.id, copyTextInPage, [text]);
   if (!ok) throw new Error("Couldn't write to the clipboard.");
 }
 
 async function downloadPage(tab) {
-  const { markdown, title } = await extractArticle(tab.id);
-  await runInPage(tab.id, downloadInPage, [markdown, toFilename(title)]);
+  const result = await extractArticle(tab.id);
+  const markdown = assembleMarkdown(result, await getEnabledFields());
+  await runInPage(tab.id, downloadInPage, [markdown, toFilename(result.title)]);
 }
 
 async function handle(action, tab) {

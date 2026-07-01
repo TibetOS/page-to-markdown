@@ -38,6 +38,7 @@ Coming soon.
 - **Keyboard shortcut & context menu** — extract or copy without opening the popup
 - **Selection clipping** — highlight text, right-click, get just that part as Markdown
 - **Rich, valid YAML front matter** — title, author, source, site, publish date, language, excerpt, timestamp — safely escaped so titles with `:`, quotes, or line breaks can't break the YAML
+- **Configurable fields** — toggle which front-matter fields are included from the settings page
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -65,7 +66,7 @@ Researchers discovered that smaller, more efficient models...
 
 ## Permissions
 
-`activeTab` + `scripting` + `contextMenus`. The extension only touches a page when *you* invoke it (icon click, keyboard shortcut, or right-click menu) — `activeTab` grants access for that one action, so there are no broad host permissions, no background tracking, and no analytics. `contextMenus` only adds the right-click entries.
+`activeTab` + `scripting` + `contextMenus` + `storage`. The extension only touches a page when *you* invoke it (icon click, keyboard shortcut, or right-click menu) — `activeTab` grants access for that one action, so there are no broad host permissions, no background tracking, and no analytics. `contextMenus` adds the right-click entries; `storage` saves your front-matter field preferences (locally / via your browser account — nothing leaves for our servers, because we have none).
 
 ## Roadmap
 
@@ -74,7 +75,8 @@ Researchers discovered that smaller, more efficient models...
 - **v1.2** — Keyboard shortcut, right-click context menu, selection-only clipping ✅
 - **v1.3** — Rich, YAML-safe front matter (escaped values + site/date/lang/excerpt) ✅
 - **v1.4** — Preview & edit panel with live word/token counts ✅
-- **Next** — Configurable front-matter fields, Firefox/Edge builds
+- **v1.5** — Configurable front-matter fields (settings page) ✅
+- **Next** — Firefox/Edge builds
 - **Later** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.

@@ -6,6 +6,7 @@ const downloadBtn = document.getElementById("download");
 const copyBtn = document.getElementById("copy");
 const copyAIBtn = document.getElementById("copyAI");
 const previewBtn = document.getElementById("preview-btn");
+const settingsBtn = document.getElementById("settings");
 
 const editor = document.getElementById("editor");
 const meta = document.getElementById("meta");
@@ -100,8 +101,9 @@ function downloadMarkdown(markdown, filename) {
 downloadBtn.addEventListener("click", async () => {
   setBusy(true, downloadBtn, "Extracting...");
   try {
-    const { markdown, title } = await extract();
-    const filename = toFilename(title);
+    const result = await extract();
+    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const filename = toFilename(result.title);
     downloadMarkdown(markdown, filename);
     showSuccess(`Downloaded: ${filename}`);
   } catch (err) {
@@ -114,7 +116,8 @@ downloadBtn.addEventListener("click", async () => {
 copyBtn.addEventListener("click", async () => {
   setBusy(true, copyBtn, "Copying...");
   try {
-    const { markdown } = await extract();
+    const result = await extract();
+    const markdown = assembleMarkdown(result, await getEnabledFields());
     await copyToClipboard(markdown);
     showSuccess(`Copied — ~${estimateTokens(markdown).toLocaleString()} tokens`);
   } catch (err) {
@@ -127,8 +130,8 @@ copyBtn.addEventListener("click", async () => {
 copyAIBtn.addEventListener("click", async () => {
   setBusy(true, copyAIBtn, "Copying...");
   try {
-    const { markdown, title, url } = await extract();
-    const lean = buildLeanMarkdown(markdown, title, url);
+    const { body, title, url } = await extract();
+    const lean = buildLeanMarkdown(body, title, url);
     await copyToClipboard(lean);
     showSuccess(`Copied for AI — ~${estimateTokens(lean).toLocaleString()} tokens`);
   } catch (err) {
@@ -166,9 +169,9 @@ function showPreview() {
 previewBtn.addEventListener("click", async () => {
   setBusy(true, previewBtn, "Extracting...");
   try {
-    const { markdown, title, url } = await extract();
-    current = { title: title || "page", url: url || "" };
-    editor.value = markdown;
+    const result = await extract();
+    current = { title: result.title || "page", url: result.url || "" };
+    editor.value = assembleMarkdown(result, await getEnabledFields());
     showPreview();
   } catch (err) {
     showError(err);
@@ -185,6 +188,9 @@ backBtn.addEventListener("click", () => {
   status.textContent = "";
   status.className = "";
 });
+
+// Open the options page to choose which front-matter fields are included.
+settingsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
 
 // Preview actions operate on the (possibly edited) editor content.
 

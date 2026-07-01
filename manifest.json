@@ -1,11 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Page to Markdown",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "One-click extraction of any page's content as a clean .md file",
-  "permissions": ["activeTab", "scripting", "contextMenus"],
+  "permissions": ["activeTab", "scripting", "contextMenus", "storage"],
   "background": {
     "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
   },
   "action": {
     "default_popup": "popup.html",
