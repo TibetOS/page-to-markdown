@@ -5,7 +5,7 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 300px;
+      width: 380px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       padding: 16px;
       background: #1a1a2e;
@@ -33,12 +33,18 @@
       transition: background 0.15s;
     }
     .btn + .btn { margin-top: 8px; }
-    #download { background: #7c3aed; }
-    #download:hover { background: #6d28d9; }
-    #copy { background: #2563eb; }
-    #copy:hover { background: #1d4ed8; }
-    #copyAI { background: #0d9488; }
-    #copyAI:hover { background: #0f766e; }
+    #download, #downloadEdited { background: #7c3aed; }
+    #download:hover, #downloadEdited:hover { background: #6d28d9; }
+    #copy, #copyEdited { background: #2563eb; }
+    #copy:hover, #copyEdited:hover { background: #1d4ed8; }
+    #copyAI, #copyAIEdited { background: #0d9488; }
+    #copyAI:hover, #copyAIEdited:hover { background: #0f766e; }
+    #preview-btn { background: #475569; }
+    #preview-btn:hover { background: #3f4a5c; }
+    #settings { background: transparent; color: #94a3b8; font-weight: 500; }
+    #settings:hover { color: #e0e0e0; }
+    #back { background: transparent; color: #94a3b8; font-weight: 500; padding: 6px; }
+    #back:hover { color: #e0e0e0; }
     .btn:disabled { background: #444; cursor: default; }
     #status {
       margin-top: 10px;
@@ -48,13 +54,52 @@
     }
     .error { color: #f87171; }
     .success { color: #4ade80; }
+    [hidden] { display: none !important; }
+    #editor {
+      width: 100%;
+      height: 260px;
+      margin: 4px 0 8px;
+      padding: 10px;
+      border: 1px solid #333;
+      border-radius: 8px;
+      background: #0f0f1e;
+      color: #e0e0e0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      resize: none;
+    }
+    #meta {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+    }
+    .actions { display: flex; gap: 8px; }
+    .actions .btn { margin-top: 0; }
   </style>
 </head>
 <body>
   <h1><span>📄</span> Page to Markdown</h1>
-  <button id="download" class="btn">⬇ Extract .md</button>
-  <button id="copy" class="btn">📋 Copy Markdown</button>
-  <button id="copyAI" class="btn">✨ Copy for AI</button>
+
+  <section id="main">
+    <button id="download" class="btn">⬇ Extract .md</button>
+    <button id="copy" class="btn">📋 Copy Markdown</button>
+    <button id="copyAI" class="btn">✨ Copy for AI</button>
+    <button id="preview-btn" class="btn">👁 Preview &amp; edit</button>
+    <button id="settings" class="btn">⚙ Front-matter settings</button>
+  </section>
+
+  <section id="preview" hidden>
+    <textarea id="editor" spellcheck="false" aria-label="Editable Markdown preview"></textarea>
+    <div id="meta"></div>
+    <div class="actions">
+      <button id="downloadEdited" class="btn">⬇ Download</button>
+      <button id="copyEdited" class="btn">📋 Copy</button>
+      <button id="copyAIEdited" class="btn">✨ Copy for AI</button>
+    </div>
+    <button id="back" class="btn">← Back</button>
+  </section>
+
   <div id="status"></div>
   <script src="shared.js"></script>
   <script src="popup.js"></script>

@@ -28,6 +28,60 @@ function estimateTokens(text) {
   return Math.ceil(text.length / 4);
 }
 
+// Front-matter fields, in output order. Users can toggle each on/off.
+const FRONT_MATTER_FIELDS = ["title", "author", "source", "site", "published", "lang", "excerpt", "extracted"];
+const DEFAULT_FIELDS = FRONT_MATTER_FIELDS.reduce((acc, key) => ((acc[key] = true), acc), {});
+
+// Strip C0 control characters (code < 32). Done via char codes rather than a
+// regex so the source stays free of literal control bytes.
+function stripControls(s) {
+  return Array.from(s)
+    .filter((ch) => ch.charCodeAt(0) >= 32)
+    .join("");
+}
+
+// Serialize a value as a safe double-quoted YAML scalar: escape backslashes and
+// quotes, turn CR/LF/TAB into escape sequences, drop remaining control chars —
+// so titles with ":", quotes, or line breaks can't produce invalid YAML.
+function yamlString(value) {
+  const escaped = String(value ?? "")
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n")
+    .replace(/\t/g, "\\t");
+  return `"${stripControls(escaped)}"`;
+}
+
+// Build a YAML front-matter block from a metadata object, honouring which
+// fields are enabled and skipping any that are absent. Returns "" if nothing
+// would be emitted.
+function buildFrontMatter(meta, enabled) {
+  const on = enabled || DEFAULT_FIELDS;
+  const lines = FRONT_MATTER_FIELDS.filter((key) => on[key] !== false)
+    .map((key) => [key, meta?.[key]])
+    .filter(([, value]) => value != null && String(value).trim() !== "")
+    .map(([key, value]) => `${key}: ${yamlString(value)}`);
+  if (!lines.length) return "";
+  return "---\n" + lines.join("\n") + "\n---\n\n";
+}
+
+// Assemble the full Markdown document (front matter + body) for a content.js
+// result, honouring the user's enabled fields.
+function assembleMarkdown(result, enabled) {
+  return buildFrontMatter(result.meta, enabled) + result.body;
+}
+
+// Load the user's enabled-field settings, falling back to all-on.
+async function getEnabledFields() {
+  try {
+    const stored = await chrome.storage.sync.get("frontMatterFields");
+    return { ...DEFAULT_FIELDS, ...(stored.frontMatterFields || {}) };
+  } catch {
+    return { ...DEFAULT_FIELDS };
+  }
+}
+
 // Build token-lean Markdown for pasting into an AI chat: no front matter,
 // no images, with a title + source line so the model knows the provenance.
 function buildLeanMarkdown(markdown, title, url) {

@@ -1,11 +1,36 @@
+const mainView = document.getElementById("main");
+const previewView = document.getElementById("preview");
+const status = document.getElementById("status");
+
 const downloadBtn = document.getElementById("download");
 const copyBtn = document.getElementById("copy");
 const copyAIBtn = document.getElementById("copyAI");
-const status = document.getElementById("status");
+const previewBtn = document.getElementById("preview-btn");
+const settingsBtn = document.getElementById("settings");
 
-const buttons = [downloadBtn, copyBtn, copyAIBtn];
+const editor = document.getElementById("editor");
+const meta = document.getElementById("meta");
+const downloadEditedBtn = document.getElementById("downloadEdited");
+const copyEditedBtn = document.getElementById("copyEdited");
+const copyAIEditedBtn = document.getElementById("copyAIEdited");
+const backBtn = document.getElementById("back");
 
-// Run Readability + Turndown in the active tab and return { markdown, title }.
+// Original labels, so we can restore them after a busy state.
+const labels = new Map([
+  [downloadBtn, "⬇ Extract .md"],
+  [copyBtn, "📋 Copy Markdown"],
+  [copyAIBtn, "✨ Copy for AI"],
+  [previewBtn, "👁 Preview & edit"],
+  [downloadEditedBtn, "⬇ Download"],
+  [copyEditedBtn, "📋 Copy"],
+  [copyAIEditedBtn, "✨ Copy for AI"],
+]);
+const allButtons = [...labels.keys(), backBtn];
+
+// Metadata from the most recent extraction, used by the preview actions.
+let current = { title: "page", url: "" };
+
+// Run Readability + Turndown in the active tab and return { markdown, title, url }.
 async function extract() {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab?.id) throw new Error("No active tab found.");
@@ -19,7 +44,7 @@ async function extract() {
   if (!result?.success) {
     throw new Error(result?.error || "Extraction failed — page may not have article content.");
   }
-  return result;
+  return { ...result, url: tab.url };
 }
 
 // toFilename / stripFrontMatter / stripImages / estimateTokens / buildLeanMarkdown
@@ -41,15 +66,13 @@ async function copyToClipboard(text) {
 }
 
 function setBusy(busy, activeBtn, label) {
-  buttons.forEach((b) => (b.disabled = busy));
+  allButtons.forEach((b) => (b.disabled = busy));
   if (busy) {
     status.textContent = "";
     status.className = "";
-    activeBtn.textContent = label;
+    if (activeBtn) activeBtn.textContent = label;
   } else {
-    downloadBtn.textContent = "⬇ Extract .md";
-    copyBtn.textContent = "📋 Copy Markdown";
-    copyAIBtn.textContent = "✨ Copy for AI";
+    labels.forEach((text, btn) => (btn.textContent = text));
   }
 }
 
@@ -63,21 +86,25 @@ function showSuccess(msg) {
   status.className = "success";
 }
 
-// ⬇ Download the full Markdown (with front matter) as a .md file.
+function downloadMarkdown(markdown, filename) {
+  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// --- Direct one-click actions (main view) ---
+
 downloadBtn.addEventListener("click", async () => {
   setBusy(true, downloadBtn, "Extracting...");
   try {
-    const { markdown, title } = await extract();
-    const filename = toFilename(title);
-
-    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-
+    const result = await extract();
+    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const filename = toFilename(result.title);
+    downloadMarkdown(markdown, filename);
     showSuccess(`Downloaded: ${filename}`);
   } catch (err) {
     showError(err);
@@ -86,11 +113,11 @@ downloadBtn.addEventListener("click", async () => {
   }
 });
 
-// 📋 Copy the full Markdown (with front matter) to the clipboard.
 copyBtn.addEventListener("click", async () => {
   setBusy(true, copyBtn, "Copying...");
   try {
-    const { markdown } = await extract();
+    const result = await extract();
+    const markdown = assembleMarkdown(result, await getEnabledFields());
     await copyToClipboard(markdown);
     showSuccess(`Copied — ~${estimateTokens(markdown).toLocaleString()} tokens`);
   } catch (err) {
@@ -100,14 +127,95 @@ copyBtn.addEventListener("click", async () => {
   }
 });
 
-// ✨ Copy token-lean Markdown (no front matter, no images) for pasting into an AI chat.
 copyAIBtn.addEventListener("click", async () => {
   setBusy(true, copyAIBtn, "Copying...");
   try {
-    const { markdown, title } = await extract();
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const { body, title, url } = await extract();
+    const lean = buildLeanMarkdown(body, title, url);
+    await copyToClipboard(lean);
+    showSuccess(`Copied for AI — ~${estimateTokens(lean).toLocaleString()} tokens`);
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
 
-    const lean = buildLeanMarkdown(markdown, title, tab?.url);
+// --- Preview & edit ---
+
+function updateMeta() {
+  const text = editor.value;
+  const words = (text.match(/\S+/g) || []).length;
+  meta.textContent = `${words.toLocaleString()} words · ~${estimateTokens(text).toLocaleString()} tokens`;
+}
+
+// Debounce so the word/token count doesn't recompute on every keystroke
+// (avoids typing jank on large articles).
+function debounce(fn, delay) {
+  let timeout;
+  return (...args) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => fn(...args), delay);
+  };
+}
+
+function showPreview() {
+  mainView.hidden = true;
+  previewView.hidden = false;
+  updateMeta();
+  editor.focus();
+}
+
+previewBtn.addEventListener("click", async () => {
+  setBusy(true, previewBtn, "Extracting...");
+  try {
+    const result = await extract();
+    current = { title: result.title || "page", url: result.url || "" };
+    editor.value = assembleMarkdown(result, await getEnabledFields());
+    showPreview();
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
+
+editor.addEventListener("input", debounce(updateMeta, 150));
+
+backBtn.addEventListener("click", () => {
+  previewView.hidden = true;
+  mainView.hidden = false;
+  status.textContent = "";
+  status.className = "";
+});
+
+// Open the options page to choose which front-matter fields are included.
+settingsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
+
+// Preview actions operate on the (possibly edited) editor content.
+
+downloadEditedBtn.addEventListener("click", () => {
+  const filename = toFilename(current.title);
+  downloadMarkdown(editor.value, filename);
+  showSuccess(`Downloaded: ${filename}`);
+});
+
+copyEditedBtn.addEventListener("click", async () => {
+  setBusy(true, copyEditedBtn, "Copying...");
+  try {
+    await copyToClipboard(editor.value);
+    showSuccess(`Copied — ~${estimateTokens(editor.value).toLocaleString()} tokens`);
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
+
+copyAIEditedBtn.addEventListener("click", async () => {
+  setBusy(true, copyAIEditedBtn, "Copying...");
+  try {
+    const lean = buildLeanMarkdown(editor.value, current.title, current.url);
     await copyToClipboard(lean);
     showSuccess(`Copied for AI — ~${estimateTokens(lean).toLocaleString()} tokens`);
   } catch (err) {
