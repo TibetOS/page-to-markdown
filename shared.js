@@ -112,3 +112,40 @@ async function getObsidianVault() {
     return "";
   }
 }
+
+// The user's optional webhook URL (empty string when unset).
+async function getWebhookUrl() {
+  try {
+    const stored = await chrome.storage.sync.get("webhookUrl");
+    return (stored.webhookUrl || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+// Validate a webhook URL: must parse and be https (localhost may be http).
+// Returns the normalized href, or null if invalid.
+function normalizeWebhookUrl(raw) {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return null;
+  let url;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && isLocalhost)) return null;
+  return url.href;
+}
+
+// POST the extracted document to the user's webhook as JSON. The caller must
+// already hold host permission for the webhook's origin.
+async function postToWebhook(webhookUrl, payload) {
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Webhook responded ${res.status} ${res.statusText}`.trim());
+}

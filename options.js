@@ -15,6 +15,9 @@ const DESCRIPTIONS = {
 const fieldsEl = document.getElementById("fields");
 const savedEl = document.getElementById("saved");
 const vaultEl = document.getElementById("vault");
+const webhookEl = document.getElementById("webhook");
+const saveWebhookBtn = document.getElementById("saveWebhook");
+const webhookStatusEl = document.getElementById("webhookStatus");
 
 function render(enabled) {
   fieldsEl.replaceChildren();
@@ -51,7 +54,37 @@ async function save() {
 
 vaultEl.addEventListener("change", save);
 
+// Saving the webhook needs its own button: chrome.permissions.request must run
+// inside a user gesture, and we only ask for the webhook's own origin.
+saveWebhookBtn.addEventListener("click", async () => {
+  const raw = webhookEl.value;
+  if (!raw.trim()) {
+    await chrome.storage.sync.set({ webhookUrl: "" });
+    webhookStatusEl.textContent = "Webhook cleared.";
+    return;
+  }
+  const normalized = normalizeWebhookUrl(raw);
+  if (!normalized) {
+    webhookStatusEl.textContent = "Invalid URL — must be https:// (or http://localhost).";
+    return;
+  }
+  const origin = new URL(normalized).origin + "/*";
+  try {
+    const granted = await chrome.permissions.request({ origins: [origin] });
+    if (!granted) {
+      webhookStatusEl.textContent = "Permission declined — webhook not saved.";
+      return;
+    }
+    await chrome.storage.sync.set({ webhookUrl: normalized });
+    webhookEl.value = normalized;
+    webhookStatusEl.textContent = "Saved ✓ — access granted for " + new URL(normalized).origin;
+  } catch (err) {
+    webhookStatusEl.textContent = "Couldn't save: " + err.message;
+  }
+});
+
 (async () => {
   render(await getEnabledFields());
   vaultEl.value = await getObsidianVault();
+  webhookEl.value = await getWebhookUrl();
 })();

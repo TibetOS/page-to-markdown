@@ -10,6 +10,7 @@ One-click Chrome extension to extract any web page's content as a clean `.md` fi
    - **📋 Copy Markdown** — copy the full Markdown to your clipboard
    - **✨ Copy for AI** — copy token-lean Markdown (no front matter, no images) plus a token estimate, ready to paste into ChatGPT/Claude
    - **🟣 Send to Obsidian** — create a note straight in your vault via the `obsidian://` URI (set a default vault in settings)
+   - **📤 Send to webhook** — POST the Markdown as JSON to your own endpoint (n8n, Zapier, Make, Notion via a proxy); appears once you configure a URL in settings
    - **👁 Preview & edit** — review the Markdown in an editable pane (with live word/token counts), tweak it, then download or copy the result
 
 Or skip the popup entirely:
@@ -33,7 +34,7 @@ Edge is Chromium-based, so the same folder loads unmodified.
 2. Open `about:debugging#/runtime/this-firefox`
 3. Click **Load Temporary Add-on…** → pick `dist/firefox/manifest.json`
 
-Firefox uses a slightly different manifest (event-page background + `browser_specific_settings`); the build script generates it for you. Requires Firefox 121+.
+Firefox uses a slightly different manifest (event-page background + `browser_specific_settings`); the build script generates it for you. Requires Firefox 127+.
 
 ### From the stores
 Coming soon.
@@ -58,6 +59,7 @@ No dependencies — just Node and the `zip` CLI.
 - **Rich, valid YAML front matter** — title, author, source, site, publish date, language, excerpt, timestamp — safely escaped so titles with `:`, quotes, or line breaks can't break the YAML
 - **Configurable fields** — toggle which front-matter fields are included from the settings page
 - **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
+- **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -85,7 +87,9 @@ Researchers discovered that smaller, more efficient models...
 
 ## Permissions
 
-`activeTab` + `scripting` + `contextMenus` + `storage`. The extension only touches a page when *you* invoke it (icon click, keyboard shortcut, or right-click menu) — `activeTab` grants access for that one action, so there are no broad host permissions, no background tracking, and no analytics. `contextMenus` adds the right-click entries; `storage` saves your front-matter field preferences (locally / via your browser account — nothing leaves for our servers, because we have none).
+`activeTab` + `scripting` + `contextMenus` + `storage`. The extension only touches a page when *you* invoke it (icon click, keyboard shortcut, or right-click menu) — `activeTab` grants access for that one action, so there are no broad host permissions, no background tracking, and no analytics. `contextMenus` adds the right-click entries; `storage` saves your preferences (locally / via your browser account — nothing leaves for our servers, because we have none).
+
+If you configure a **webhook**, the browser asks you to grant access to *that one origin* at save time (declared as an optional host permission — nothing is granted by default, and no other site is ever reachable).
 
 ## Roadmap
 
@@ -97,7 +101,8 @@ Researchers discovered that smaller, more efficient models...
 - **v1.5** — Configurable front-matter fields (settings page) ✅
 - **v1.6** — Firefox & Edge builds (cross-browser packaging) ✅
 - **v1.7** — Send to Obsidian (`obsidian://` URI + default vault setting) ✅
-- **Next** — Defuddle extraction engine, send-to-Notion, on-device Gemini Nano cleanup
+- **v1.8** — Webhook destination (per-origin optional permission, JSON POST) ✅
+- **Next** — Defuddle extraction engine, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 

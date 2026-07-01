@@ -33,7 +33,8 @@ const ASSETS = [
 ];
 
 const GECKO_ID = "page-to-markdown@tibetos.github.io";
-const GECKO_MIN_VERSION = "121.0";
+// 127+ is required for optional_host_permissions support in Firefox MV3.
+const GECKO_MIN_VERSION = "127.0";
 
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
 const { version } = manifest;

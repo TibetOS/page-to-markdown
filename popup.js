@@ -6,6 +6,7 @@ const downloadBtn = document.getElementById("download");
 const copyBtn = document.getElementById("copy");
 const copyAIBtn = document.getElementById("copyAI");
 const obsidianBtn = document.getElementById("obsidian");
+const webhookBtn = document.getElementById("webhook");
 const previewBtn = document.getElementById("preview-btn");
 const settingsBtn = document.getElementById("settings");
 
@@ -22,6 +23,7 @@ const labels = new Map([
   [copyBtn, "📋 Copy Markdown"],
   [copyAIBtn, "✨ Copy for AI"],
   [obsidianBtn, "🟣 Send to Obsidian"],
+  [webhookBtn, "📤 Send to webhook"],
   [previewBtn, "👁 Preview & edit"],
   [downloadEditedBtn, "⬇ Download"],
   [copyEditedBtn, "📋 Copy"],
@@ -157,6 +159,32 @@ obsidianBtn.addEventListener("click", async () => {
       await chrome.tabs.create({ url: uri });
       showSuccess("Sent to Obsidian.");
     }
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
+
+// Only offer the webhook action once a URL has been configured in settings.
+(async () => {
+  webhookBtn.hidden = !(await getWebhookUrl());
+})();
+
+webhookBtn.addEventListener("click", async () => {
+  setBusy(true, webhookBtn, "Sending...");
+  try {
+    const webhookUrl = await getWebhookUrl();
+    if (!webhookUrl) throw new Error("No webhook configured — set one in settings.");
+    const result = await extract();
+    const markdown = assembleMarkdown(result, await getEnabledFields());
+    await postToWebhook(webhookUrl, {
+      title: result.title,
+      url: result.url,
+      markdown,
+      meta: result.meta,
+    });
+    showSuccess("Sent to webhook.");
   } catch (err) {
     showError(err);
   } finally {
