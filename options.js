@@ -92,7 +92,9 @@ saveWebhookBtn.addEventListener("click", async () => {
 aiSummaryEl.addEventListener("change", async () => {
   await chrome.storage.sync.set({ aiSummary: aiSummaryEl.checked });
   savedEl.textContent = "Saved ✓";
-  setTimeout(() => (savedEl.textContent = ""), 1500);
+  // Share save._t so rapid toggles across settings don't race the indicator.
+  clearTimeout(save._t);
+  save._t = setTimeout(() => (savedEl.textContent = ""), 1500);
 });
 
 async function refreshAiStatus() {
