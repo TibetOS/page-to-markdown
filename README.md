@@ -9,6 +9,8 @@ One-click Chrome extension to extract any web page's content as a clean `.md` fi
    - **⬇ Extract .md** — download a Markdown file with YAML front matter (title, author, source URL, timestamp)
    - **📋 Copy Markdown** — copy the full Markdown to your clipboard
    - **✨ Copy for AI** — copy token-lean Markdown (no front matter, no images) plus a token estimate, ready to paste into ChatGPT/Claude
+   - **🟣 Send to Obsidian** — create a note straight in your vault via the `obsidian://` URI (set a default vault in settings)
+   - **📤 Send to webhook** — POST the Markdown as JSON to your own endpoint (n8n, Zapier, Make, Notion via a proxy); appears once you configure a URL in settings
    - **👁 Preview & edit** — review the Markdown in an editable pane (with live word/token counts), tweak it, then download or copy the result
 
 Or skip the popup entirely:
@@ -19,14 +21,31 @@ Under the hood: [Readability.js](https://github.com/mozilla/readability) strips 
 
 ## Install
 
-### From source (Developer mode)
+### Chrome / Edge (from source)
 1. Clone this repo: `git clone https://github.com/TibetOS/page-to-markdown.git`
-2. Open `chrome://extensions/`
+2. Open `chrome://extensions/` (or `edge://extensions/`)
 3. Enable **Developer mode** (top right)
 4. Click **Load unpacked** → select the cloned folder
 
-### From Chrome Web Store
+Edge is Chromium-based, so the same folder loads unmodified.
+
+### Firefox (from source)
+1. Run `node scripts/build.mjs` to generate `dist/firefox/`
+2. Open `about:debugging#/runtime/this-firefox`
+3. Click **Load Temporary Add-on…** → pick `dist/firefox/manifest.json`
+
+Firefox uses a slightly different manifest (event-page background + `browser_specific_settings`); the build script generates it for you. Requires Firefox 127+.
+
+### From the stores
 Coming soon.
+
+## Building
+
+`node scripts/build.mjs` packages the extension into `dist/`:
+- `page-to-markdown-chrome-v<version>.zip` (also loads on Edge)
+- `page-to-markdown-firefox-v<version>.zip`
+
+No dependencies — just Node and the `zip` CLI.
 
 ## Features
 
@@ -39,6 +58,8 @@ Coming soon.
 - **Selection clipping** — highlight text, right-click, get just that part as Markdown
 - **Rich, valid YAML front matter** — title, author, source, site, publish date, language, excerpt, timestamp — safely escaped so titles with `:`, quotes, or line breaks can't break the YAML
 - **Configurable fields** — toggle which front-matter fields are included from the settings page
+- **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
+- **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -66,7 +87,9 @@ Researchers discovered that smaller, more efficient models...
 
 ## Permissions
 
-`activeTab` + `scripting` + `contextMenus` + `storage`. The extension only touches a page when *you* invoke it (icon click, keyboard shortcut, or right-click menu) — `activeTab` grants access for that one action, so there are no broad host permissions, no background tracking, and no analytics. `contextMenus` adds the right-click entries; `storage` saves your front-matter field preferences (locally / via your browser account — nothing leaves for our servers, because we have none).
+`activeTab` + `scripting` + `contextMenus` + `storage`. The extension only touches a page when *you* invoke it (icon click, keyboard shortcut, or right-click menu) — `activeTab` grants access for that one action, so there are no broad host permissions, no background tracking, and no analytics. `contextMenus` adds the right-click entries; `storage` saves your preferences (locally / via your browser account — nothing leaves for our servers, because we have none).
+
+If you configure a **webhook**, the browser asks you to grant access to *that one origin* at save time (declared as an optional host permission — nothing is granted by default, and no other site is ever reachable).
 
 ## Roadmap
 
@@ -76,8 +99,10 @@ Researchers discovered that smaller, more efficient models...
 - **v1.3** — Rich, YAML-safe front matter (escaped values + site/date/lang/excerpt) ✅
 - **v1.4** — Preview & edit panel with live word/token counts ✅
 - **v1.5** — Configurable front-matter fields (settings page) ✅
-- **Next** — Firefox/Edge builds
-- **Later** — Defuddle extraction engine, send-to-Obsidian/Notion, on-device Gemini Nano cleanup
+- **v1.6** — Firefox & Edge builds (cross-browser packaging) ✅
+- **v1.7** — Send to Obsidian (`obsidian://` URI + default vault setting) ✅
+- **v1.8** — Webhook destination (per-origin optional permission, JSON POST) ✅
+- **Next** — Defuddle extraction engine, on-device Gemini Nano cleanup
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 

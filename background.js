@@ -3,12 +3,15 @@
 // the popup (content.js); clipboard writes and downloads run in the page,
 // where a DOM and the user gesture from the command/menu click are available.
 
-importScripts("shared.js");
+// Chrome/Edge load this as a service worker (importScripts available); Firefox
+// loads it as an event page with shared.js already injected via background.scripts.
+if (typeof importScripts === "function") importScripts("shared.js");
 
 const MENU = {
   download: "p2m-download",
   copy: "p2m-copy",
   copyAI: "p2m-copy-ai",
+  obsidian: "p2m-obsidian",
   copySelection: "p2m-copy-selection",
 };
 
@@ -18,6 +21,7 @@ chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({ id: MENU.download, parentId: "p2m", title: "Download page as Markdown", contexts: ["page"] });
     chrome.contextMenus.create({ id: MENU.copy, parentId: "p2m", title: "Copy page as Markdown", contexts: ["page"] });
     chrome.contextMenus.create({ id: MENU.copyAI, parentId: "p2m", title: "Copy page for AI", contexts: ["page"] });
+    chrome.contextMenus.create({ id: MENU.obsidian, parentId: "p2m", title: "Send page to Obsidian", contexts: ["page"] });
     chrome.contextMenus.create({ id: MENU.copySelection, parentId: "p2m", title: "Copy selection as Markdown", contexts: ["selection"] });
   });
 });
@@ -115,12 +119,26 @@ async function downloadPage(tab) {
   await runInPage(tab.id, downloadInPage, [markdown, toFilename(result.title)]);
 }
 
+async function sendToObsidian(tab) {
+  const result = await extractArticle(tab.id);
+  const markdown = assembleMarkdown(result, await getEnabledFields());
+  const uri = buildObsidianUri(result.title, markdown, await getObsidianVault());
+  if (uri.length > OBSIDIAN_URI_LIMIT) {
+    // Too large for the obsidian:// protocol handler — hand off via clipboard.
+    const ok = await runInPage(tab.id, copyTextInPage, [markdown]);
+    if (!ok) throw new Error("Too large to send; clipboard copy failed too.");
+    return;
+  }
+  await chrome.tabs.create({ url: uri });
+}
+
 async function handle(action, tab) {
   if (!tab?.id) return;
   try {
     if (action === MENU.download) await downloadPage(tab);
     else if (action === MENU.copy) await copyPage(tab, false);
     else if (action === MENU.copyAI) await copyPage(tab, true);
+    else if (action === MENU.obsidian) await sendToObsidian(tab);
     else if (action === MENU.copySelection) await copySelection(tab);
     flashBadge("✓", "#16a34a");
   } catch (err) {

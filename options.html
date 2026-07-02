@@ -52,6 +52,34 @@
     <div id="fields"></div>
   </fieldset>
 
+  <fieldset style="margin-top: 18px;">
+    <legend>Obsidian</legend>
+    <div class="field">
+      <label for="vault" style="flex: 1;">
+        <div class="name">Default vault</div>
+        <div class="desc">Optional. Used by <strong>Send to Obsidian</strong>. Leave blank to use your last-focused vault.</div>
+        <input type="text" id="vault" placeholder="My Vault"
+          style="margin-top: 6px; width: 100%; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset style="margin-top: 18px;">
+    <legend>Webhook</legend>
+    <div class="field">
+      <label for="webhook" style="flex: 1;">
+        <div class="name">Webhook URL</div>
+        <div class="desc">Optional. <strong>Send to webhook</strong> POSTs the extracted Markdown as JSON — works with n8n, Zapier, Make, or your own endpoint (Notion via a small proxy). HTTPS only (localhost may use HTTP). Saving asks the browser to grant access to just that site.</div>
+        <input type="text" id="webhook" placeholder="https://example.com/hook"
+          style="margin-top: 6px; width: 100%; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
+      </label>
+    </div>
+    <div class="field" style="border-bottom: none;">
+      <button id="saveWebhook" style="padding: 8px 14px; border: none; border-radius: 6px; background: #7c3aed; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">Save &amp; grant access</button>
+      <span id="webhookStatus" style="font-size: 12px; color: #94a3b8; align-self: center;"></span>
+    </div>
+  </fieldset>
+
   <div id="saved"></div>
 
   <script src="shared.js"></script>

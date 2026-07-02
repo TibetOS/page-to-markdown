@@ -88,3 +88,64 @@ function buildLeanMarkdown(markdown, title, url) {
   const body = stripImages(stripFrontMatter(markdown)).trim();
   return `# ${title || "Untitled"}\nSource: ${url || ""}\n\n${body}`;
 }
+
+// Above this encoded-URI length, sending via obsidian:// becomes unreliable
+// (OS protocol-handler limits), so callers fall back to the clipboard.
+const OBSIDIAN_URI_LIMIT = 30000;
+
+// Build an obsidian://new URI that creates a note with the given content.
+// vault is optional — Obsidian uses the last-focused vault when it's omitted.
+function buildObsidianUri(title, content, vault) {
+  const params = new URLSearchParams();
+  if (vault) params.set("vault", vault);
+  params.set("name", (title || "page").slice(0, 120));
+  params.set("content", content);
+  return `obsidian://new?${params.toString()}`;
+}
+
+// The user's optional default Obsidian vault name.
+async function getObsidianVault() {
+  try {
+    const stored = await chrome.storage.sync.get("obsidianVault");
+    return (stored.obsidianVault || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+// The user's optional webhook URL (empty string when unset).
+async function getWebhookUrl() {
+  try {
+    const stored = await chrome.storage.sync.get("webhookUrl");
+    return (stored.webhookUrl || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+// Validate a webhook URL: must parse and be https (localhost may be http).
+// Returns the normalized href, or null if invalid.
+function normalizeWebhookUrl(raw) {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return null;
+  let url;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return null;
+  }
+  const isLocalhost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && isLocalhost)) return null;
+  return url.href;
+}
+
+// POST the extracted document to the user's webhook as JSON. The caller must
+// already hold host permission for the webhook's origin.
+async function postToWebhook(webhookUrl, payload) {
+  const res = await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Webhook responded ${res.status} ${res.statusText}`.trim());
+}
