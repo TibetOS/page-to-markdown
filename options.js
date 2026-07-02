@@ -105,7 +105,9 @@ async function refreshAiStatus() {
     const availability = await Summarizer.availability();
     if (availability === "available") {
       aiStatusEl.textContent = "Model installed — summaries are ready. ✓";
-    } else if (availability === "downloadable" || availability === "downloading") {
+    } else if (availability === "downloading") {
+      aiStatusEl.textContent = "Model is downloading in the background…";
+    } else if (availability === "downloadable") {
       aiStatusEl.textContent = "Model not installed (~a few GB, one-time).";
       downloadModelBtn.hidden = false;
     } else {
@@ -124,7 +126,10 @@ downloadModelBtn.addEventListener("click", async () => {
     const summarizer = await Summarizer.create({
       monitor(m) {
         m.addEventListener("downloadprogress", (e) => {
-          aiStatusEl.textContent = `Downloading model… ${Math.round((e.loaded || 0) * 100)}%`;
+          // e.loaded is a 0–1 fraction in some Chrome versions and raw bytes
+          // (with e.total set) in others — handle both.
+          const percent = e.total ? Math.round((e.loaded / e.total) * 100) : Math.round((e.loaded || 0) * 100);
+          aiStatusEl.textContent = `Downloading model… ${percent}%`;
         });
       },
     });

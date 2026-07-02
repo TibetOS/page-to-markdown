@@ -70,11 +70,18 @@ async function maybeAddAiSummary(result) {
       format: "plain-text",
       length: "short",
     });
-    // Plain text in, capped — keeps us well inside the model's input quota.
-    const text = stripImages(result.body).replace(/[#*_>`\[\]()!-]/g, " ").slice(0, 8000);
-    const summary = (await summarizer.summarize(text))?.trim();
-    summarizer.destroy?.();
-    if (summary) result.meta.summary = summary.replace(/\s+/g, " ");
+    try {
+      // Plain text in, capped — keeps us well inside the model's input quota.
+      const text = stripImages(result?.body || "").replace(/[#*_>`\[\]()!-]/g, " ").slice(0, 8000);
+      const summary = (await summarizer.summarize(text))?.trim();
+      if (summary) {
+        if (!result.meta) result.meta = {};
+        result.meta.summary = summary.replace(/\s+/g, " ");
+      }
+    } finally {
+      // Always release the session — a leak here pins the multi-GB model.
+      summarizer.destroy?.();
+    }
   } catch {
     // On-device AI is best-effort; never surface its errors.
   }
