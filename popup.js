@@ -54,6 +54,39 @@ async function extract() {
 // toFilename / stripFrontMatter / stripImages / estimateTokens / buildLeanMarkdown
 // live in shared.js (loaded before this script), shared with the service worker.
 
+// If the user opted in and Chrome's on-device Summarizer (Gemini Nano) is
+// ready, add a short TL;DR to result.meta.summary. Strictly feature-detected:
+// no setting → no-op; API missing or model not downloaded → no-op (the model
+// is only ever downloaded from the explicit button in settings). Any failure
+// degrades silently — extraction must never break because of AI.
+async function maybeAddAiSummary(result) {
+  try {
+    if (!(await getAiSummaryEnabled())) return;
+    if (typeof Summarizer === "undefined") return;
+    if ((await Summarizer.availability()) !== "available") return;
+
+    const summarizer = await Summarizer.create({
+      type: "tldr",
+      format: "plain-text",
+      length: "short",
+    });
+    // Plain text in, capped — keeps us well inside the model's input quota.
+    const text = stripImages(result.body).replace(/[#*_>`\[\]()!-]/g, " ").slice(0, 8000);
+    const summary = (await summarizer.summarize(text))?.trim();
+    summarizer.destroy?.();
+    if (summary) result.meta.summary = summary.replace(/\s+/g, " ");
+  } catch {
+    // On-device AI is best-effort; never surface its errors.
+  }
+}
+
+// Extraction plus optional enrichments for outputs that carry front matter.
+async function extractWithExtras() {
+  const result = await extract();
+  await maybeAddAiSummary(result);
+  return result;
+}
+
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -105,7 +138,7 @@ function downloadMarkdown(markdown, filename) {
 downloadBtn.addEventListener("click", async () => {
   setBusy(true, downloadBtn, "Extracting...");
   try {
-    const result = await extract();
+    const result = await extractWithExtras();
     const markdown = assembleMarkdown(result, await getEnabledFields());
     const filename = toFilename(result.title);
     downloadMarkdown(markdown, filename);
@@ -120,7 +153,7 @@ downloadBtn.addEventListener("click", async () => {
 copyBtn.addEventListener("click", async () => {
   setBusy(true, copyBtn, "Copying...");
   try {
-    const result = await extract();
+    const result = await extractWithExtras();
     const markdown = assembleMarkdown(result, await getEnabledFields());
     await copyToClipboard(markdown);
     showSuccess(`Copied — ~${estimateTokens(markdown).toLocaleString()} tokens`);
@@ -148,7 +181,7 @@ copyAIBtn.addEventListener("click", async () => {
 obsidianBtn.addEventListener("click", async () => {
   setBusy(true, obsidianBtn, "Sending...");
   try {
-    const result = await extract();
+    const result = await extractWithExtras();
     const markdown = assembleMarkdown(result, await getEnabledFields());
     const uri = buildObsidianUri(result.title, markdown, await getObsidianVault());
     if (uri.length > OBSIDIAN_URI_LIMIT) {
@@ -176,7 +209,7 @@ webhookBtn.addEventListener("click", async () => {
   try {
     const webhookUrl = await getWebhookUrl();
     if (!webhookUrl) throw new Error("No webhook configured — set one in settings.");
-    const result = await extract();
+    const result = await extractWithExtras();
     const markdown = assembleMarkdown(result, await getEnabledFields());
     await postToWebhook(webhookUrl, {
       title: result.title,
@@ -220,7 +253,7 @@ function showPreview() {
 previewBtn.addEventListener("click", async () => {
   setBusy(true, previewBtn, "Extracting...");
   try {
-    const result = await extract();
+    const result = await extractWithExtras();
     current = { title: result.title || "page", url: result.url || "" };
     editor.value = assembleMarkdown(result, await getEnabledFields());
     showPreview();

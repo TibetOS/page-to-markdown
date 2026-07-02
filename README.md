@@ -60,6 +60,7 @@ No dependencies — just Node and the `zip` CLI.
 - **Configurable fields** — toggle which front-matter fields are included from the settings page
 - **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
 - **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
+- **On-device AI summary (opt-in)** — a TL;DR front-matter field via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -102,7 +103,8 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 - **v1.6** — Firefox & Edge builds (cross-browser packaging) ✅
 - **v1.7** — Send to Obsidian (`obsidian://` URI + default vault setting) ✅
 - **v1.8** — Webhook destination (per-origin optional permission, JSON POST) ✅
-- **Next** — Defuddle extraction engine, on-device Gemini Nano cleanup
+- **v1.9** — Opt-in on-device AI summary via Chrome's Summarizer API (Gemini Nano) ✅
+- **Next** — Defuddle extraction engine, more on-device AI (auto-tags, translate)
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 

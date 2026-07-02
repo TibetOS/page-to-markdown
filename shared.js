@@ -29,7 +29,8 @@ function estimateTokens(text) {
 }
 
 // Front-matter fields, in output order. Users can toggle each on/off.
-const FRONT_MATTER_FIELDS = ["title", "author", "source", "site", "published", "lang", "excerpt", "extracted"];
+// "summary" is only populated when the opt-in on-device AI summary is enabled.
+const FRONT_MATTER_FIELDS = ["title", "author", "source", "site", "published", "lang", "excerpt", "summary", "extracted"];
 const DEFAULT_FIELDS = FRONT_MATTER_FIELDS.reduce((acc, key) => ((acc[key] = true), acc), {});
 
 // Strip C0 control characters (code < 32). Done via char codes rather than a
@@ -110,6 +111,16 @@ async function getObsidianVault() {
     return (stored.obsidianVault || "").trim();
   } catch {
     return "";
+  }
+}
+
+// Whether the user opted in to on-device AI summaries (default off).
+async function getAiSummaryEnabled() {
+  try {
+    const stored = await chrome.storage.sync.get("aiSummary");
+    return stored.aiSummary === true;
+  } catch {
+    return false;
   }
 }
 

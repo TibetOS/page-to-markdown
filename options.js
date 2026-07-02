@@ -9,6 +9,7 @@ const DESCRIPTIONS = {
   published: "Original publish date, when available.",
   lang: "Content language (e.g. en, he).",
   excerpt: "A short summary/description of the page.",
+  summary: "On-device AI TL;DR (only when enabled below and the model is installed).",
   extracted: "Timestamp of when you extracted it.",
 };
 
@@ -18,6 +19,9 @@ const vaultEl = document.getElementById("vault");
 const webhookEl = document.getElementById("webhook");
 const saveWebhookBtn = document.getElementById("saveWebhook");
 const webhookStatusEl = document.getElementById("webhookStatus");
+const aiSummaryEl = document.getElementById("aiSummary");
+const aiStatusEl = document.getElementById("aiStatus");
+const downloadModelBtn = document.getElementById("downloadModel");
 
 function render(enabled) {
   fieldsEl.replaceChildren();
@@ -83,8 +87,60 @@ saveWebhookBtn.addEventListener("click", async () => {
   }
 });
 
+// --- On-device AI (Gemini Nano) ---
+
+aiSummaryEl.addEventListener("change", async () => {
+  await chrome.storage.sync.set({ aiSummary: aiSummaryEl.checked });
+  savedEl.textContent = "Saved ✓";
+  setTimeout(() => (savedEl.textContent = ""), 1500);
+});
+
+async function refreshAiStatus() {
+  downloadModelBtn.hidden = true;
+  if (typeof Summarizer === "undefined") {
+    aiStatusEl.textContent = "Not supported by this browser (needs Chrome 138+ with built-in AI).";
+    return;
+  }
+  try {
+    const availability = await Summarizer.availability();
+    if (availability === "available") {
+      aiStatusEl.textContent = "Model installed — summaries are ready. ✓";
+    } else if (availability === "downloadable" || availability === "downloading") {
+      aiStatusEl.textContent = "Model not installed (~a few GB, one-time).";
+      downloadModelBtn.hidden = false;
+    } else {
+      aiStatusEl.textContent = "Unavailable on this device (insufficient storage/GPU).";
+    }
+  } catch (err) {
+    aiStatusEl.textContent = "Couldn't check availability: " + err.message;
+  }
+}
+
+// Explicit user-gesture download — we never fetch the model implicitly.
+downloadModelBtn.addEventListener("click", async () => {
+  downloadModelBtn.disabled = true;
+  aiStatusEl.textContent = "Downloading model… 0%";
+  try {
+    const summarizer = await Summarizer.create({
+      monitor(m) {
+        m.addEventListener("downloadprogress", (e) => {
+          aiStatusEl.textContent = `Downloading model… ${Math.round((e.loaded || 0) * 100)}%`;
+        });
+      },
+    });
+    summarizer.destroy?.();
+    await refreshAiStatus();
+  } catch (err) {
+    aiStatusEl.textContent = "Download failed: " + err.message;
+  } finally {
+    downloadModelBtn.disabled = false;
+  }
+});
+
 (async () => {
   render(await getEnabledFields());
   vaultEl.value = await getObsidianVault();
   webhookEl.value = await getWebhookUrl();
+  aiSummaryEl.checked = await getAiSummaryEnabled();
+  refreshAiStatus();
 })();
