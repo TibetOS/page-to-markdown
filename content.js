@@ -27,6 +27,42 @@
     },
   });
 
+  // --- Math (KaTeX / MathJax / MathML) → LaTeX delimiters ---
+  // KaTeX and MathML embed the original TeX as an <annotation> element;
+  // recover it so formulas survive as $...$ / $$...$$ instead of collapsing
+  // into rendered-glyph soup.
+
+  const extractTex = (node) => {
+    const annotation = node.querySelector?.('annotation[encoding="application/x-tex"]');
+    if (annotation?.textContent) return annotation.textContent.trim();
+    // MathJax v3 keeps no TeX; its assistive MathML text is the best we have.
+    const assistive = node.querySelector?.("mjx-assistive-mml");
+    if (assistive?.textContent) return assistive.textContent.trim();
+    return null;
+  };
+
+  const isDisplayMath = (node) =>
+    !!(
+      node.classList?.contains("katex-display") ||
+      node.getAttribute?.("display") === "block" ||
+      node.getAttribute?.("display") === "true" ||
+      node.closest?.(".katex-display")
+    );
+
+  turndownService.addRule("math", {
+    filter: (node) =>
+      node.nodeName === "MJX-CONTAINER" ||
+      node.nodeName === "MATH" ||
+      !!node.classList?.contains?.("katex-display") ||
+      !!node.classList?.contains?.("katex"),
+    replacement: (content, node) => {
+      const tex = extractTex(node);
+      if (!tex) return content; // nothing recoverable — keep Turndown's default
+      const oneLine = tex.replace(/\s*\n\s*/g, " ");
+      return isDisplayMath(node) ? `\n\n$$\n${tex}\n$$\n\n` : `$${oneLine}$`;
+    },
+  });
+
   let markdown = turndownService.turndown(article.content);
 
   // Deduplicate images — keep only the first occurrence of each URL

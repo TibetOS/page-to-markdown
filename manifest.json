@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Page to Markdown",
-  "version": "1.9.0",
+  "version": "1.10.0",
   "description": "One-click extraction of any page's content as a clean .md file",
   "permissions": ["activeTab", "scripting", "contextMenus", "storage"],
   "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
