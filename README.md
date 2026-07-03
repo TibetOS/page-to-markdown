@@ -47,6 +47,24 @@ Coming soon.
 
 No dependencies — just Node and the `zip` CLI.
 
+## Use your clips as AI context (MCP)
+
+`mcp/server.mjs` is a zero-dependency [Model Context Protocol](https://modelcontextprotocol.io) server that exposes your clipped pages to local AI tools. It scans a directory for Page to Markdown clips (`.md` files with our front matter) and offers three tools: `list_clips`, `read_clip`, and `search_clips`. Everything stays on your machine.
+
+Register it with Claude Code:
+
+```bash
+claude mcp add page-to-markdown -- node /path/to/page-to-markdown/mcp/server.mjs
+```
+
+or in any MCP client config:
+
+```json
+{ "command": "node", "args": ["/path/to/page-to-markdown/mcp/server.mjs"] }
+```
+
+The clips directory defaults to `~/Downloads`; override with `--dir <path>` or the `P2M_CLIPS_DIR` environment variable. Then ask your agent things like *"search my clips for quicksort and summarize what I saved."*
+
 ## Features
 
 - **Smart extraction** — Defuddle's multi-pass pipeline with site-specific extractors (Reddit, X, Substack, Medium, Wikipedia, YouTube, GitHub, HN…), with Mozilla Readability as fallback
@@ -64,6 +82,7 @@ No dependencies — just Node and the `zip` CLI.
 - **On-device AI summary & tags (opt-in)** — a TL;DR field and 3–6 topic tags via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
 - **On-device translation (opt-in)** — translate the preview's prose with Chrome's built-in Translator while code blocks, links, and front matter stay untouched
 - **Math survives** — KaTeX/MathML formulas come out as `$…$` / `$$…$$` LaTeX (recovered from the embedded TeX annotations), not rendered-glyph soup
+- **MCP bridge** — a zero-dependency local server that lets Claude / Cursor / any MCP client list, read, and search your clips as context
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -113,7 +132,9 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 - **v1.13** — On-device translation in the preview (structure-preserving) ✅
 - **v1.14** — Defuddle extraction engine (site-specific extractors, Readability fallback) ✅
 
-That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered. Exploratory ideas under evaluation: MCP bridge for local AI agents, batch/multi-tab capture, local annotation library.
+- **v1.15** — MCP bridge: expose clips to local AI agents (`mcp/server.mjs`) ✅
+
+That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered, plus the first exploratory-tier item. Still under evaluation: batch/multi-tab capture, local annotation library.
 
 ## License
 
