@@ -43,7 +43,7 @@ async function extract() {
 
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: ["lib/Readability.js", "lib/turndown.js", "content.js"],
+    files: ["lib/defuddle.js", "lib/Readability.js", "lib/turndown.js", "content.js"],
   });
 
   const result = results?.[results.length - 1]?.result;

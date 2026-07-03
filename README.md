@@ -17,7 +17,7 @@ Or skip the popup entirely:
 - **Keyboard shortcut** — `Ctrl+Shift+M` (`⌘+Shift+M` on Mac) opens the popup; customize at `chrome://extensions/shortcuts`
 - **Right-click menu** — *Page to Markdown* → download / copy the page, or **Copy selection as Markdown** when text is highlighted
 
-Under the hood: [Readability.js](https://github.com/mozilla/readability) strips ads/nav/junk, then [Turndown.js](https://github.com/mixmark-io/turndown) converts the clean HTML to Markdown.
+Under the hood: [Defuddle](https://github.com/kepano/defuddle) (the engine behind Obsidian Web Clipper, with site-specific extractors for Reddit, X, Substack, YouTube, GitHub, and more) extracts the article, falling back to [Readability.js](https://github.com/mozilla/readability) when needed; [Turndown.js](https://github.com/mixmark-io/turndown) then converts the clean HTML to Markdown.
 
 ## Install
 
@@ -49,7 +49,7 @@ No dependencies — just Node and the `zip` CLI.
 
 ## Features
 
-- **Smart extraction** — Mozilla Readability strips ads, nav, footers, cookie banners
+- **Smart extraction** — Defuddle's multi-pass pipeline with site-specific extractors (Reddit, X, Substack, Medium, Wikipedia, YouTube, GitHub, HN…), with Mozilla Readability as fallback
 - **Clean Markdown** — ATX headings, fenced code blocks, proper links
 - **One-click clipboard** — copy full Markdown, or token-lean Markdown formatted for AI chats
 - **Preview & edit** — review and tweak the Markdown before saving, with live word/token counts
@@ -111,9 +111,9 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 - **v1.11** — Opt-in on-device AI topic tags via the Prompt API ✅
 - **v1.12** — Per-site output templates with `{{variables}}` ✅
 - **v1.13** — On-device translation in the preview (structure-preserving) ✅
-- **Next** — Defuddle extraction engine (pending third-party bundle review)
+- **v1.14** — Defuddle extraction engine (site-specific extractors, Readability fallback) ✅
 
-See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
+That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered. Exploratory ideas under evaluation: MCP bridge for local AI agents, batch/multi-tab capture, local annotation library.
 
 ## License
 
