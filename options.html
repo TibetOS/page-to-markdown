@@ -65,6 +65,28 @@
   </fieldset>
 
   <fieldset style="margin-top: 18px;">
+    <legend>On-device AI (Gemini Nano)</legend>
+    <div class="field">
+      <input type="checkbox" id="aiSummary">
+      <label for="aiSummary">
+        <div class="name">Add a TL;DR summary to front matter</div>
+        <div class="desc">Uses Chrome's built-in Summarizer — everything runs locally, nothing leaves your device. Only applies when the model is already installed; we never download it without you asking.</div>
+      </label>
+    </div>
+    <div class="field">
+      <input type="checkbox" id="aiTags">
+      <label for="aiTags">
+        <div class="name">Add topic tags to front matter</div>
+        <div class="desc">3–6 lowercase tags suggested by the same local model — handy for Obsidian/PKM organization. Same rules: local-only, and only when the model is already installed.</div>
+      </label>
+    </div>
+    <div class="field" style="border-bottom: none;">
+      <span id="aiStatus" style="font-size: 12px; color: #94a3b8; align-self: center;">Checking availability…</span>
+      <button id="downloadModel" hidden style="padding: 8px 14px; border: none; border-radius: 6px; background: #0d9488; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">Download model</button>
+    </div>
+  </fieldset>
+
+  <fieldset style="margin-top: 18px;">
     <legend>Webhook</legend>
     <div class="field">
       <label for="webhook" style="flex: 1;">
@@ -77,6 +99,30 @@
     <div class="field" style="border-bottom: none;">
       <button id="saveWebhook" style="padding: 8px 14px; border: none; border-radius: 6px; background: #7c3aed; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">Save &amp; grant access</button>
       <span id="webhookStatus" style="font-size: 12px; color: #94a3b8; align-self: center;"></span>
+    </div>
+  </fieldset>
+
+  <fieldset style="margin-top: 18px;">
+    <legend>Translation</legend>
+    <div class="field" style="border-bottom: none;">
+      <label for="translateTarget" style="flex: 1;">
+        <div class="name">Target language</div>
+        <div class="desc">Optional. Adds a <strong>🌐 Translate</strong> button to the preview that translates the page's prose on-device (Chrome's built-in Translator) — code blocks, links, and front matter are left untouched. Use a two-letter code like <code>en</code>, <code>he</code>, <code>es</code>. Leave blank to disable.</div>
+        <input type="text" id="translateTarget" placeholder="en" maxlength="8"
+          style="margin-top: 6px; width: 120px; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset style="margin-top: 18px;">
+    <legend>Per-site templates</legend>
+    <div class="field" style="border-bottom: none; display: block;">
+      <div class="desc" style="margin-bottom: 8px;">
+        Override the output layout for matching sites. Pattern is a domain (<code>example.com</code> matches subdomains too) or <code>*</code> for every site; the first match wins.
+        Variables: <code>{{frontmatter}}</code> <code>{{content}}</code> <code>{{title}}</code> <code>{{author}}</code> <code>{{source}}</code> <code>{{site}}</code> <code>{{published}}</code> <code>{{lang}}</code> <code>{{excerpt}}</code> <code>{{summary}}</code> <code>{{tags}}</code> <code>{{date}}</code> <code>{{extracted}}</code>
+      </div>
+      <div id="templates"></div>
+      <button id="addTemplate" style="margin-top: 8px; padding: 8px 14px; border: none; border-radius: 6px; background: #475569; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">+ Add template</button>
     </div>
   </fieldset>
 

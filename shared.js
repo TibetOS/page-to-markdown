@@ -29,7 +29,9 @@ function estimateTokens(text) {
 }
 
 // Front-matter fields, in output order. Users can toggle each on/off.
-const FRONT_MATTER_FIELDS = ["title", "author", "source", "site", "published", "lang", "excerpt", "extracted"];
+// "summary" and "tags" are only populated when the opt-in on-device AI
+// features are enabled.
+const FRONT_MATTER_FIELDS = ["title", "author", "source", "site", "published", "lang", "excerpt", "summary", "tags", "extracted"];
 const DEFAULT_FIELDS = FRONT_MATTER_FIELDS.reduce((acc, key) => ((acc[key] = true), acc), {});
 
 // Strip C0 control characters (code < 32). Done via char codes rather than a
@@ -53,6 +55,13 @@ function yamlString(value) {
   return `"${stripControls(escaped)}"`;
 }
 
+// Serialize a front-matter value: arrays become a flow-style YAML list of
+// quoted scalars, everything else a single quoted scalar.
+function yamlValue(value) {
+  if (Array.isArray(value)) return `[${value.map(yamlString).join(", ")}]`;
+  return yamlString(value);
+}
+
 // Build a YAML front-matter block from a metadata object, honouring which
 // fields are enabled and skipping any that are absent. Returns "" if nothing
 // would be emitted.
@@ -60,8 +69,10 @@ function buildFrontMatter(meta, enabled) {
   const on = enabled || DEFAULT_FIELDS;
   const lines = FRONT_MATTER_FIELDS.filter((key) => on[key] !== false)
     .map((key) => [key, meta?.[key]])
-    .filter(([, value]) => value != null && String(value).trim() !== "")
-    .map(([key, value]) => `${key}: ${yamlString(value)}`);
+    .filter(([, value]) =>
+      Array.isArray(value) ? value.length > 0 : value != null && String(value).trim() !== ""
+    )
+    .map(([key, value]) => `${key}: ${yamlValue(value)}`);
   if (!lines.length) return "";
   return "---\n" + lines.join("\n") + "\n---\n\n";
 }
@@ -89,6 +100,141 @@ function buildLeanMarkdown(markdown, title, url) {
   return `# ${title || "Untitled"}\nSource: ${url || ""}\n\n${body}`;
 }
 
+// --- On-device translation ---
+
+// The user's target language for the preview Translate action ("" = off).
+async function getTranslateTarget() {
+  try {
+    const stored = await chrome.storage.sync.get("translateTarget");
+    return (stored.translateTarget || "").trim().toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+// Translate a Markdown document's prose while preserving its structure.
+// `translate` is an async (text) => text function (injected so this stays
+// testable). Untouched: YAML front matter, fenced code blocks, blank lines,
+// leading markdown syntax (headings/lists/blockquotes), inline code spans,
+// and link/image URLs (protected with placeholder tokens during translation).
+async function translateMarkdown(markdown, translate) {
+  const lines = String(markdown).split("\n");
+  const out = [];
+  let inFence = false;
+  let inFrontMatter = lines[0] === "---";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (inFrontMatter) {
+      out.push(line);
+      if (i > 0 && line === "---") inFrontMatter = false;
+      continue;
+    }
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      out.push(line);
+      continue;
+    }
+    if (inFence || line.trim() === "") {
+      out.push(line);
+      continue;
+    }
+
+    const m = line.match(/^([ \t]*(?:(?:[>*+-]|\d+\.|#{1,6})\s+)*)(.*)$/);
+    const prefix = m[1];
+    const rest = m[2];
+    if (!rest.trim()) {
+      out.push(line);
+      continue;
+    }
+
+    // Shield inline code spans and link/image URL parts behind ⟦n⟧ tokens so
+    // the translator only ever sees prose. Each token maps 1:1 to its
+    // original text, so restoring is a plain substitution.
+    const shielded = [];
+    const shield = (s) => {
+      shielded.push(s);
+      return `⟦${shielded.length - 1}⟧`;
+    };
+    const shieldedText = rest
+      .replace(/`[^`]*`/g, shield)
+      .replace(/\]\([^)]*\)/g, shield);
+
+    let translated;
+    try {
+      translated = await translate(shieldedText);
+    } catch {
+      translated = shieldedText; // per-line best effort — keep the original
+    }
+    const restored = String(translated).replace(/⟦(\d+)⟧/g, (s, n) => shielded[Number(n)] ?? s);
+    out.push(prefix + restored);
+  }
+  return out.join("\n");
+}
+
+// --- Per-site templates ---
+// A template is { pattern, template }. pattern is a domain: "example.com"
+// matches example.com and any subdomain; "*" matches every site. The first
+// matching template replaces the default front-matter + body layout.
+
+// Saved templates (empty array when unset or storage is unavailable).
+async function getTemplates() {
+  try {
+    const stored = await chrome.storage.sync.get("templates");
+    return Array.isArray(stored.templates) ? stored.templates : [];
+  } catch {
+    return [];
+  }
+}
+
+// First template whose domain pattern matches the URL's host, or null.
+function matchTemplate(templates, url) {
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  for (const t of templates || []) {
+    if (!t?.pattern || !t?.template) continue;
+    const p = t.pattern.trim().toLowerCase().replace(/^\*\./, "");
+    if (p === "*" || host === p || host.endsWith("." + p)) return t;
+  }
+  return null;
+}
+
+// Fill {{variable}} placeholders; unknown variables render as "".
+function renderTemplate(template, vars) {
+  return String(template).replace(/\{\{(\w+)\}\}/g, (m, key) =>
+    vars[key] != null ? String(vars[key]) : ""
+  );
+}
+
+// Produce the final document for an extraction result: a matching per-site
+// template wins; otherwise the standard front matter + body.
+function applyTemplateOrDefault(result, enabled, templates) {
+  // The popup sets result.url from the tab; the background worker doesn't,
+  // so fall back to the page URL captured in meta.source.
+  const tpl = matchTemplate(templates, result.url || result.meta?.source);
+  if (!tpl) return assembleMarkdown(result, enabled);
+  const meta = result.meta || {};
+  const vars = {
+    ...meta,
+    tags: Array.isArray(meta.tags) ? meta.tags.join(", ") : meta.tags || "",
+    content: result.body || "",
+    frontmatter: buildFrontMatter(meta, enabled),
+    date: String(meta.extracted || "").slice(0, 10),
+  };
+  return renderTemplate(tpl.template, vars);
+}
+
+// Load settings and build the output document for a result in one call.
+async function buildOutput(result) {
+  const [enabled, templates] = await Promise.all([getEnabledFields(), getTemplates()]);
+  return applyTemplateOrDefault(result, enabled, templates);
+}
+
 // Above this encoded-URI length, sending via obsidian:// becomes unreliable
 // (OS protocol-handler limits), so callers fall back to the clipboard.
 const OBSIDIAN_URI_LIMIT = 30000;
@@ -111,6 +257,42 @@ async function getObsidianVault() {
   } catch {
     return "";
   }
+}
+
+// Whether the user opted in to on-device AI summaries (default off).
+async function getAiSummaryEnabled() {
+  try {
+    const stored = await chrome.storage.sync.get("aiSummary");
+    return stored.aiSummary === true;
+  } catch {
+    return false;
+  }
+}
+
+// Whether the user opted in to on-device AI tags (default off).
+async function getAiTagsEnabled() {
+  try {
+    const stored = await chrome.storage.sync.get("aiTags");
+    return stored.aiTags === true;
+  } catch {
+    return false;
+  }
+}
+
+// Parse a model's tag response into at most six clean, lowercase,
+// hyphenated tags. Tolerates commas, newlines, bullets, and stray quotes.
+function parseAiTags(text) {
+  return String(text || "")
+    .split(/[,\n]/)
+    .map((t) =>
+      t
+        .replace(/^[\s\-*•#"'`\d.]+|[\s"'`.]+$/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+    )
+    .filter((t) => t.length >= 2 && t.length <= 40)
+    .filter((t, i, arr) => arr.indexOf(t) === i)
+    .slice(0, 6);
 }
 
 // The user's optional webhook URL (empty string when unset).

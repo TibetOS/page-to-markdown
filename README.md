@@ -17,7 +17,7 @@ Or skip the popup entirely:
 - **Keyboard shortcut** — `Ctrl+Shift+M` (`⌘+Shift+M` on Mac) opens the popup; customize at `chrome://extensions/shortcuts`
 - **Right-click menu** — *Page to Markdown* → download / copy the page, or **Copy selection as Markdown** when text is highlighted
 
-Under the hood: [Readability.js](https://github.com/mozilla/readability) strips ads/nav/junk, then [Turndown.js](https://github.com/mixmark-io/turndown) converts the clean HTML to Markdown.
+Under the hood: [Defuddle](https://github.com/kepano/defuddle) (the engine behind Obsidian Web Clipper, with site-specific extractors for Reddit, X, Substack, YouTube, GitHub, and more) extracts the article, falling back to [Readability.js](https://github.com/mozilla/readability) when needed; [Turndown.js](https://github.com/mixmark-io/turndown) then converts the clean HTML to Markdown.
 
 ## Install
 
@@ -49,7 +49,7 @@ No dependencies — just Node and the `zip` CLI.
 
 ## Features
 
-- **Smart extraction** — Mozilla Readability strips ads, nav, footers, cookie banners
+- **Smart extraction** — Defuddle's multi-pass pipeline with site-specific extractors (Reddit, X, Substack, Medium, Wikipedia, YouTube, GitHub, HN…), with Mozilla Readability as fallback
 - **Clean Markdown** — ATX headings, fenced code blocks, proper links
 - **One-click clipboard** — copy full Markdown, or token-lean Markdown formatted for AI chats
 - **Preview & edit** — review and tweak the Markdown before saving, with live word/token counts
@@ -58,8 +58,12 @@ No dependencies — just Node and the `zip` CLI.
 - **Selection clipping** — highlight text, right-click, get just that part as Markdown
 - **Rich, valid YAML front matter** — title, author, source, site, publish date, language, excerpt, timestamp — safely escaped so titles with `:`, quotes, or line breaks can't break the YAML
 - **Configurable fields** — toggle which front-matter fields are included from the settings page
+- **Per-site templates** — override the output layout per domain with `{{title}}`, `{{content}}`, `{{frontmatter}}`, `{{tags}}`, `{{date}}` and more; first matching domain wins
 - **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
 - **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
+- **On-device AI summary & tags (opt-in)** — a TL;DR field and 3–6 topic tags via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
+- **On-device translation (opt-in)** — translate the preview's prose with Chrome's built-in Translator while code blocks, links, and front matter stay untouched
+- **Math survives** — KaTeX/MathML formulas come out as `$…$` / `$$…$$` LaTeX (recovered from the embedded TeX annotations), not rendered-glyph soup
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
 - **Zero cloud** — everything runs locally, no data leaves your browser
@@ -102,9 +106,14 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 - **v1.6** — Firefox & Edge builds (cross-browser packaging) ✅
 - **v1.7** — Send to Obsidian (`obsidian://` URI + default vault setting) ✅
 - **v1.8** — Webhook destination (per-origin optional permission, JSON POST) ✅
-- **Next** — Defuddle extraction engine, on-device Gemini Nano cleanup
+- **v1.9** — Opt-in on-device AI summary via Chrome's Summarizer API (Gemini Nano) ✅
+- **v1.10** — Math extraction: KaTeX/MathJax/MathML → `$…$` / `$$…$$` LaTeX ✅
+- **v1.11** — Opt-in on-device AI topic tags via the Prompt API ✅
+- **v1.12** — Per-site output templates with `{{variables}}` ✅
+- **v1.13** — On-device translation in the preview (structure-preserving) ✅
+- **v1.14** — Defuddle extraction engine (site-specific extractors, Readability fallback) ✅
 
-See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
+That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered. Exploratory ideas under evaluation: MCP bridge for local AI agents, batch/multi-tab capture, local annotation library.
 
 ## License
 

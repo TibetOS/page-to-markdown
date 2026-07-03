@@ -15,6 +15,7 @@ const meta = document.getElementById("meta");
 const downloadEditedBtn = document.getElementById("downloadEdited");
 const copyEditedBtn = document.getElementById("copyEdited");
 const copyAIEditedBtn = document.getElementById("copyAIEdited");
+const translateBtn = document.getElementById("translate");
 const backBtn = document.getElementById("back");
 
 // Original labels, so we can restore them after a busy state.
@@ -28,6 +29,7 @@ const labels = new Map([
   [downloadEditedBtn, "⬇ Download"],
   [copyEditedBtn, "📋 Copy"],
   [copyAIEditedBtn, "✨ Copy for AI"],
+  [translateBtn, "🌐 Translate"],
 ]);
 const allButtons = [...labels.keys(), backBtn];
 
@@ -41,7 +43,7 @@ async function extract() {
 
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: ["lib/Readability.js", "lib/turndown.js", "content.js"],
+    files: ["lib/defuddle.js", "lib/Readability.js", "lib/turndown.js", "content.js"],
   });
 
   const result = results?.[results.length - 1]?.result;
@@ -53,6 +55,81 @@ async function extract() {
 
 // toFilename / stripFrontMatter / stripImages / estimateTokens / buildLeanMarkdown
 // live in shared.js (loaded before this script), shared with the service worker.
+
+// If the user opted in and Chrome's on-device Summarizer (Gemini Nano) is
+// ready, add a short TL;DR to result.meta.summary. Strictly feature-detected:
+// no setting → no-op; API missing or model not downloaded → no-op (the model
+// is only ever downloaded from the explicit button in settings). Any failure
+// degrades silently — extraction must never break because of AI.
+async function maybeAddAiSummary(result) {
+  try {
+    if (!(await getAiSummaryEnabled())) return;
+    if (typeof Summarizer === "undefined") return;
+    if ((await Summarizer.availability()) !== "available") return;
+
+    const summarizer = await Summarizer.create({
+      type: "tldr",
+      format: "plain-text",
+      length: "short",
+    });
+    try {
+      // Plain text in, capped — keeps us well inside the model's input quota.
+      const text = stripImages(result?.body || "").replace(/[#*_>`\[\]()!-]/g, " ").slice(0, 8000);
+      const summary = (await summarizer.summarize(text))?.trim();
+      if (summary) {
+        if (!result.meta) result.meta = {};
+        result.meta.summary = summary.replace(/\s+/g, " ");
+      }
+    } finally {
+      // Always release the session — a leak here pins the multi-GB model.
+      summarizer.destroy?.();
+    }
+  } catch {
+    // On-device AI is best-effort; never surface its errors.
+  }
+}
+
+// If the user opted in and the on-device Prompt API (Gemini Nano) is ready,
+// add topic tags to result.meta.tags. Same gating and best-effort rules as
+// maybeAddAiSummary.
+async function maybeAddAiTags(result) {
+  try {
+    if (!(await getAiTagsEnabled())) return;
+    if (typeof LanguageModel === "undefined") return;
+    if ((await LanguageModel.availability()) !== "available") return;
+
+    const session = await LanguageModel.create({
+      initialPrompts: [
+        {
+          role: "system",
+          content:
+            "You label articles. Reply with 3 to 6 short topic tags for the given text, lowercase, comma-separated, no other output.",
+        },
+      ],
+    });
+    try {
+      const text = stripImages(result?.body || "").replace(/[#*_>`\[\]()!-]/g, " ").slice(0, 6000);
+      const tags = parseAiTags(await session.prompt(`Text:\n${text}\n\nTags:`));
+      if (tags.length) {
+        if (!result.meta) result.meta = {};
+        result.meta.tags = tags;
+      }
+    } finally {
+      session.destroy?.();
+    }
+  } catch {
+    // On-device AI is best-effort; never surface its errors.
+  }
+}
+
+// Extraction plus optional enrichments for outputs that carry front matter.
+// AI steps run sequentially — one Gemini Nano session at a time.
+async function extractWithExtras() {
+  const result = await extract();
+  await maybeAddAiSummary(result);
+  await maybeAddAiTags(result);
+  return result;
+}
 
 async function copyToClipboard(text) {
   try {
@@ -105,8 +182,8 @@ function downloadMarkdown(markdown, filename) {
 downloadBtn.addEventListener("click", async () => {
   setBusy(true, downloadBtn, "Extracting...");
   try {
-    const result = await extract();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const result = await extractWithExtras();
+    const markdown = await buildOutput(result);
     const filename = toFilename(result.title);
     downloadMarkdown(markdown, filename);
     showSuccess(`Downloaded: ${filename}`);
@@ -120,8 +197,8 @@ downloadBtn.addEventListener("click", async () => {
 copyBtn.addEventListener("click", async () => {
   setBusy(true, copyBtn, "Copying...");
   try {
-    const result = await extract();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const result = await extractWithExtras();
+    const markdown = await buildOutput(result);
     await copyToClipboard(markdown);
     showSuccess(`Copied — ~${estimateTokens(markdown).toLocaleString()} tokens`);
   } catch (err) {
@@ -148,8 +225,8 @@ copyAIBtn.addEventListener("click", async () => {
 obsidianBtn.addEventListener("click", async () => {
   setBusy(true, obsidianBtn, "Sending...");
   try {
-    const result = await extract();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const result = await extractWithExtras();
+    const markdown = await buildOutput(result);
     const uri = buildObsidianUri(result.title, markdown, await getObsidianVault());
     if (uri.length > OBSIDIAN_URI_LIMIT) {
       // Too large for the obsidian:// protocol handler — hand off via clipboard.
@@ -176,8 +253,8 @@ webhookBtn.addEventListener("click", async () => {
   try {
     const webhookUrl = await getWebhookUrl();
     if (!webhookUrl) throw new Error("No webhook configured — set one in settings.");
-    const result = await extract();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const result = await extractWithExtras();
+    const markdown = await buildOutput(result);
     await postToWebhook(webhookUrl, {
       title: result.title,
       url: result.url,
@@ -220,9 +297,10 @@ function showPreview() {
 previewBtn.addEventListener("click", async () => {
   setBusy(true, previewBtn, "Extracting...");
   try {
-    const result = await extract();
-    current = { title: result.title || "page", url: result.url || "" };
-    editor.value = assembleMarkdown(result, await getEnabledFields());
+    const result = await extractWithExtras();
+    current = { title: result.title || "page", url: result.url || "", lang: result.meta?.lang || "" };
+    editor.value = await buildOutput(result);
+    translateBtn.hidden = !(await getTranslateTarget()) || typeof Translator === "undefined";
     showPreview();
   } catch (err) {
     showError(err);
@@ -242,6 +320,43 @@ backBtn.addEventListener("click", () => {
 
 // Open the options page to choose which front-matter fields are included.
 settingsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
+
+// 🌐 Translate the preview in place using Chrome's on-device Translator.
+// Explicit user action: creating the translator inside this click may fetch
+// the (small) language pack, with progress shown in the status line.
+translateBtn.addEventListener("click", async () => {
+  setBusy(true, translateBtn, "Translating...");
+  try {
+    const target = await getTranslateTarget();
+    if (!target) throw new Error("Set a target language in settings first.");
+    if (typeof Translator === "undefined") throw new Error("Translation isn't supported by this browser.");
+
+    const source = (current.lang || "en").split("-")[0].toLowerCase();
+    if (source === target) throw new Error(`Page already appears to be "${target}".`);
+
+    const translator = await Translator.create({
+      sourceLanguage: source,
+      targetLanguage: target,
+      monitor(m) {
+        m.addEventListener("downloadprogress", (e) => {
+          const percent = e.total ? Math.round((e.loaded / e.total) * 100) : Math.round((e.loaded || 0) * 100);
+          status.textContent = `Downloading language pack… ${percent}%`;
+        });
+      },
+    });
+    try {
+      editor.value = await translateMarkdown(editor.value, (text) => translator.translate(text));
+      updateMeta();
+      showSuccess(`Translated ${source} → ${target}.`);
+    } finally {
+      translator.destroy?.();
+    }
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
 
 // Preview actions operate on the (possibly edited) editor content.
 

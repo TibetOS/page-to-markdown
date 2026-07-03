@@ -1,31 +1,40 @@
-One-click extraction of any web page's content as a clean Markdown (.md) file.
+Turn any web page into clean, LLM-ready Markdown — download it, copy it, or send it straight to your tools. Everything runs locally.
 
-Page to Markdown uses Mozilla's Readability engine to intelligently strip away ads, navigation, sidebars, and other noise — leaving only the article content. Then it converts the clean HTML to well-formatted Markdown with proper headings, links, images, and code blocks.
+Page to Markdown uses Mozilla's Readability engine to strip away ads, navigation, sidebars, and other noise, then converts the clean article to well-formatted Markdown with proper headings, links, images, code blocks — and even LaTeX math.
 
-HOW IT WORKS
-1. Navigate to any article, blog post, or documentation page
-2. Click the Page to Markdown icon in your toolbar
-3. Click "Extract .md" — done. Your Markdown file downloads instantly.
+WHAT YOU CAN DO
+• Extract .md — download the page as a Markdown file with rich YAML front matter
+• Copy Markdown — full Markdown straight to your clipboard, with a token estimate
+• Copy for AI — token-lean Markdown (no front matter, no images) ready to paste into ChatGPT, Claude, or any LLM chat
+• Send to Obsidian — create a note in your vault in one click (obsidian:// URI, optional default vault)
+• Send to webhook — POST extractions as JSON to your own endpoint (n8n, Zapier, Make, self-hosted)
+• Preview & edit — review and tweak the Markdown before saving, with live word/token counts
+• Copy a selection — highlight text, right-click, get just that part as Markdown
+• Keyboard shortcut & right-click menu — skip the popup entirely (Ctrl/Cmd+Shift+M)
 
-WHAT YOU GET
-Each extracted file includes YAML front matter with the page title, author, source URL, and extraction timestamp — perfect for static site generators, Obsidian, Notion imports, or any Markdown-based workflow.
+RICH, CONFIGURABLE FRONT MATTER
+Each extraction can include title, author, source URL, site, publish date, language, excerpt, and timestamp — every field togglable in settings, and always safely escaped so titles with quotes or colons never break your YAML. Perfect for Obsidian, static site generators, and RAG pipelines.
 
-FEATURES
-• Smart content extraction — powered by Mozilla Readability, the same engine behind Firefox Reader View
-• Clean Markdown output — ATX headings, fenced code blocks, proper link formatting
-• YAML front matter — title, author, source URL, timestamp
-• Image deduplication — handles lazy-loading markup that creates duplicate images
-• Hebrew & RTL support — full Unicode filename and content support
-• Zero cloud dependencies — everything runs locally in your browser, no data leaves your machine
+BUILT FOR AI WORKFLOWS
+Markdown is the native language of LLM context. "Copy for AI" gives you token-lean output with a source line and a token estimate, so you know the context cost before you paste.
 
-PRIVACY
-Page to Markdown requires only the "activeTab" permission — it can only access the page you're currently viewing, and only when you click the extension icon. No data is collected, no analytics, no cloud APIs. The source code is fully open on GitHub.
+ON-DEVICE AI (OPT-IN)
+With Chrome's built-in Gemini Nano, Page to Markdown can add a TL;DR summary and 3–6 topic tags to your front matter — computed entirely on your device. Off by default, feature-detected, and the model is only ever downloaded when you press the download button in settings. No cloud AI, ever.
+
+TECHNICAL CONTENT DONE RIGHT
+• Fenced code blocks with language tags
+• KaTeX/MathJax formulas recovered as $…$ / $$…$$ LaTeX
+• Image deduplication for lazy-loading pages
+• Hebrew & RTL support — full Unicode filenames and content
+
+PRIVACY FIRST
+No accounts, no analytics, no cloud APIs, no data collection. The extension touches a page only when you invoke it (activeTab). If you configure a webhook, the browser asks you to approve access to that one site — nothing is granted by default. The source code is fully open on GitHub.
 
 PERFECT FOR
-• Developers saving documentation and Stack Overflow answers
-• Researchers archiving articles for reference
-• Writers collecting source material
-• Anyone building a personal knowledge base in Markdown
+• Developers saving documentation and technical articles
+• AI power users feeding pages into ChatGPT/Claude or RAG pipelines
+• Researchers and writers archiving sources
+• Anyone building a personal knowledge base in Obsidian or plain Markdown
 
 OPEN SOURCE
-MIT License
+MIT License — also available for Firefox and Edge from the GitHub repository.
