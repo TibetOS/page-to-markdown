@@ -29,8 +29,9 @@ function estimateTokens(text) {
 }
 
 // Front-matter fields, in output order. Users can toggle each on/off.
-// "summary" is only populated when the opt-in on-device AI summary is enabled.
-const FRONT_MATTER_FIELDS = ["title", "author", "source", "site", "published", "lang", "excerpt", "summary", "extracted"];
+// "summary" and "tags" are only populated when the opt-in on-device AI
+// features are enabled.
+const FRONT_MATTER_FIELDS = ["title", "author", "source", "site", "published", "lang", "excerpt", "summary", "tags", "extracted"];
 const DEFAULT_FIELDS = FRONT_MATTER_FIELDS.reduce((acc, key) => ((acc[key] = true), acc), {});
 
 // Strip C0 control characters (code < 32). Done via char codes rather than a
@@ -54,6 +55,13 @@ function yamlString(value) {
   return `"${stripControls(escaped)}"`;
 }
 
+// Serialize a front-matter value: arrays become a flow-style YAML list of
+// quoted scalars, everything else a single quoted scalar.
+function yamlValue(value) {
+  if (Array.isArray(value)) return `[${value.map(yamlString).join(", ")}]`;
+  return yamlString(value);
+}
+
 // Build a YAML front-matter block from a metadata object, honouring which
 // fields are enabled and skipping any that are absent. Returns "" if nothing
 // would be emitted.
@@ -61,8 +69,10 @@ function buildFrontMatter(meta, enabled) {
   const on = enabled || DEFAULT_FIELDS;
   const lines = FRONT_MATTER_FIELDS.filter((key) => on[key] !== false)
     .map((key) => [key, meta?.[key]])
-    .filter(([, value]) => value != null && String(value).trim() !== "")
-    .map(([key, value]) => `${key}: ${yamlString(value)}`);
+    .filter(([, value]) =>
+      Array.isArray(value) ? value.length > 0 : value != null && String(value).trim() !== ""
+    )
+    .map(([key, value]) => `${key}: ${yamlValue(value)}`);
   if (!lines.length) return "";
   return "---\n" + lines.join("\n") + "\n---\n\n";
 }
@@ -122,6 +132,32 @@ async function getAiSummaryEnabled() {
   } catch {
     return false;
   }
+}
+
+// Whether the user opted in to on-device AI tags (default off).
+async function getAiTagsEnabled() {
+  try {
+    const stored = await chrome.storage.sync.get("aiTags");
+    return stored.aiTags === true;
+  } catch {
+    return false;
+  }
+}
+
+// Parse a model's tag response into at most six clean, lowercase,
+// hyphenated tags. Tolerates commas, newlines, bullets, and stray quotes.
+function parseAiTags(text) {
+  return String(text || "")
+    .split(/[,\n]/)
+    .map((t) =>
+      t
+        .replace(/^[\s\-*•#"'`\d.]+|[\s"'`.]+$/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+    )
+    .filter((t) => t.length >= 2 && t.length <= 40)
+    .filter((t, i, arr) => arr.indexOf(t) === i)
+    .slice(0, 6);
 }
 
 // The user's optional webhook URL (empty string when unset).

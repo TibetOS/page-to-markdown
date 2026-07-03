@@ -87,10 +87,45 @@ async function maybeAddAiSummary(result) {
   }
 }
 
+// If the user opted in and the on-device Prompt API (Gemini Nano) is ready,
+// add topic tags to result.meta.tags. Same gating and best-effort rules as
+// maybeAddAiSummary.
+async function maybeAddAiTags(result) {
+  try {
+    if (!(await getAiTagsEnabled())) return;
+    if (typeof LanguageModel === "undefined") return;
+    if ((await LanguageModel.availability()) !== "available") return;
+
+    const session = await LanguageModel.create({
+      initialPrompts: [
+        {
+          role: "system",
+          content:
+            "You label articles. Reply with 3 to 6 short topic tags for the given text, lowercase, comma-separated, no other output.",
+        },
+      ],
+    });
+    try {
+      const text = stripImages(result?.body || "").replace(/[#*_>`\[\]()!-]/g, " ").slice(0, 6000);
+      const tags = parseAiTags(await session.prompt(`Text:\n${text}\n\nTags:`));
+      if (tags.length) {
+        if (!result.meta) result.meta = {};
+        result.meta.tags = tags;
+      }
+    } finally {
+      session.destroy?.();
+    }
+  } catch {
+    // On-device AI is best-effort; never surface its errors.
+  }
+}
+
 // Extraction plus optional enrichments for outputs that carry front matter.
+// AI steps run sequentially — one Gemini Nano session at a time.
 async function extractWithExtras() {
   const result = await extract();
   await maybeAddAiSummary(result);
+  await maybeAddAiTags(result);
   return result;
 }
 

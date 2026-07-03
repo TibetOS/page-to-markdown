@@ -60,7 +60,7 @@ No dependencies — just Node and the `zip` CLI.
 - **Configurable fields** — toggle which front-matter fields are included from the settings page
 - **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
 - **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
-- **On-device AI summary (opt-in)** — a TL;DR front-matter field via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
+- **On-device AI summary & tags (opt-in)** — a TL;DR field and 3–6 topic tags via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
 - **Math survives** — KaTeX/MathML formulas come out as `$…$` / `$$…$$` LaTeX (recovered from the embedded TeX annotations), not rendered-glyph soup
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
@@ -106,7 +106,8 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 - **v1.8** — Webhook destination (per-origin optional permission, JSON POST) ✅
 - **v1.9** — Opt-in on-device AI summary via Chrome's Summarizer API (Gemini Nano) ✅
 - **v1.10** — Math extraction: KaTeX/MathJax/MathML → `$…$` / `$$…$$` LaTeX ✅
-- **Next** — Defuddle extraction engine, more on-device AI (auto-tags, translate)
+- **v1.11** — Opt-in on-device AI topic tags via the Prompt API ✅
+- **Next** — Defuddle extraction engine, on-device translate
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 

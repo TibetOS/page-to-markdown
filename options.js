@@ -10,6 +10,7 @@ const DESCRIPTIONS = {
   lang: "Content language (e.g. en, he).",
   excerpt: "A short summary/description of the page.",
   summary: "On-device AI TL;DR (only when enabled below and the model is installed).",
+  tags: "On-device AI topic tags (only when enabled below and the model is installed).",
   extracted: "Timestamp of when you extracted it.",
 };
 
@@ -20,6 +21,7 @@ const webhookEl = document.getElementById("webhook");
 const saveWebhookBtn = document.getElementById("saveWebhook");
 const webhookStatusEl = document.getElementById("webhookStatus");
 const aiSummaryEl = document.getElementById("aiSummary");
+const aiTagsEl = document.getElementById("aiTags");
 const aiStatusEl = document.getElementById("aiStatus");
 const downloadModelBtn = document.getElementById("downloadModel");
 
@@ -89,12 +91,21 @@ saveWebhookBtn.addEventListener("click", async () => {
 
 // --- On-device AI (Gemini Nano) ---
 
-aiSummaryEl.addEventListener("change", async () => {
-  await chrome.storage.sync.set({ aiSummary: aiSummaryEl.checked });
+function flashSaved() {
   savedEl.textContent = "Saved ✓";
   // Share save._t so rapid toggles across settings don't race the indicator.
   clearTimeout(save._t);
   save._t = setTimeout(() => (savedEl.textContent = ""), 1500);
+}
+
+aiSummaryEl.addEventListener("change", async () => {
+  await chrome.storage.sync.set({ aiSummary: aiSummaryEl.checked });
+  flashSaved();
+});
+
+aiTagsEl.addEventListener("change", async () => {
+  await chrome.storage.sync.set({ aiTags: aiTagsEl.checked });
+  flashSaved();
 });
 
 async function refreshAiStatus() {
@@ -149,5 +160,6 @@ downloadModelBtn.addEventListener("click", async () => {
   vaultEl.value = await getObsidianVault();
   webhookEl.value = await getWebhookUrl();
   aiSummaryEl.checked = await getAiSummaryEnabled();
+  aiTagsEl.checked = await getAiTagsEnabled();
   refreshAiStatus();
 })();
