@@ -181,7 +181,7 @@ downloadBtn.addEventListener("click", async () => {
   setBusy(true, downloadBtn, "Extracting...");
   try {
     const result = await extractWithExtras();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const markdown = await buildOutput(result);
     const filename = toFilename(result.title);
     downloadMarkdown(markdown, filename);
     showSuccess(`Downloaded: ${filename}`);
@@ -196,7 +196,7 @@ copyBtn.addEventListener("click", async () => {
   setBusy(true, copyBtn, "Copying...");
   try {
     const result = await extractWithExtras();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const markdown = await buildOutput(result);
     await copyToClipboard(markdown);
     showSuccess(`Copied — ~${estimateTokens(markdown).toLocaleString()} tokens`);
   } catch (err) {
@@ -224,7 +224,7 @@ obsidianBtn.addEventListener("click", async () => {
   setBusy(true, obsidianBtn, "Sending...");
   try {
     const result = await extractWithExtras();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const markdown = await buildOutput(result);
     const uri = buildObsidianUri(result.title, markdown, await getObsidianVault());
     if (uri.length > OBSIDIAN_URI_LIMIT) {
       // Too large for the obsidian:// protocol handler — hand off via clipboard.
@@ -252,7 +252,7 @@ webhookBtn.addEventListener("click", async () => {
     const webhookUrl = await getWebhookUrl();
     if (!webhookUrl) throw new Error("No webhook configured — set one in settings.");
     const result = await extractWithExtras();
-    const markdown = assembleMarkdown(result, await getEnabledFields());
+    const markdown = await buildOutput(result);
     await postToWebhook(webhookUrl, {
       title: result.title,
       url: result.url,
@@ -297,7 +297,7 @@ previewBtn.addEventListener("click", async () => {
   try {
     const result = await extractWithExtras();
     current = { title: result.title || "page", url: result.url || "" };
-    editor.value = assembleMarkdown(result, await getEnabledFields());
+    editor.value = await buildOutput(result);
     showPreview();
   } catch (err) {
     showError(err);

@@ -100,6 +100,68 @@ function buildLeanMarkdown(markdown, title, url) {
   return `# ${title || "Untitled"}\nSource: ${url || ""}\n\n${body}`;
 }
 
+// --- Per-site templates ---
+// A template is { pattern, template }. pattern is a domain: "example.com"
+// matches example.com and any subdomain; "*" matches every site. The first
+// matching template replaces the default front-matter + body layout.
+
+// Saved templates (empty array when unset or storage is unavailable).
+async function getTemplates() {
+  try {
+    const stored = await chrome.storage.sync.get("templates");
+    return Array.isArray(stored.templates) ? stored.templates : [];
+  } catch {
+    return [];
+  }
+}
+
+// First template whose domain pattern matches the URL's host, or null.
+function matchTemplate(templates, url) {
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  for (const t of templates || []) {
+    if (!t?.pattern || !t?.template) continue;
+    const p = t.pattern.trim().toLowerCase().replace(/^\*\./, "");
+    if (p === "*" || host === p || host.endsWith("." + p)) return t;
+  }
+  return null;
+}
+
+// Fill {{variable}} placeholders; unknown variables render as "".
+function renderTemplate(template, vars) {
+  return String(template).replace(/\{\{(\w+)\}\}/g, (m, key) =>
+    vars[key] != null ? String(vars[key]) : ""
+  );
+}
+
+// Produce the final document for an extraction result: a matching per-site
+// template wins; otherwise the standard front matter + body.
+function applyTemplateOrDefault(result, enabled, templates) {
+  // The popup sets result.url from the tab; the background worker doesn't,
+  // so fall back to the page URL captured in meta.source.
+  const tpl = matchTemplate(templates, result.url || result.meta?.source);
+  if (!tpl) return assembleMarkdown(result, enabled);
+  const meta = result.meta || {};
+  const vars = {
+    ...meta,
+    tags: Array.isArray(meta.tags) ? meta.tags.join(", ") : meta.tags || "",
+    content: result.body || "",
+    frontmatter: buildFrontMatter(meta, enabled),
+    date: String(meta.extracted || "").slice(0, 10),
+  };
+  return renderTemplate(tpl.template, vars);
+}
+
+// Load settings and build the output document for a result in one call.
+async function buildOutput(result) {
+  const [enabled, templates] = await Promise.all([getEnabledFields(), getTemplates()]);
+  return applyTemplateOrDefault(result, enabled, templates);
+}
+
 // Above this encoded-URI length, sending via obsidian:// becomes unreliable
 // (OS protocol-handler limits), so callers fall back to the clipboard.
 const OBSIDIAN_URI_LIMIT = 30000;

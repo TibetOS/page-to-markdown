@@ -108,20 +108,20 @@ async function copyPage(tab, forAI) {
   const result = await extractArticle(tab.id);
   const text = forAI
     ? buildLeanMarkdown(result.body, result.title, tab.url)
-    : assembleMarkdown(result, await getEnabledFields());
+    : await buildOutput(result);
   const ok = await runInPage(tab.id, copyTextInPage, [text]);
   if (!ok) throw new Error("Couldn't write to the clipboard.");
 }
 
 async function downloadPage(tab) {
   const result = await extractArticle(tab.id);
-  const markdown = assembleMarkdown(result, await getEnabledFields());
+  const markdown = await buildOutput(result);
   await runInPage(tab.id, downloadInPage, [markdown, toFilename(result.title)]);
 }
 
 async function sendToObsidian(tab) {
   const result = await extractArticle(tab.id);
-  const markdown = assembleMarkdown(result, await getEnabledFields());
+  const markdown = await buildOutput(result);
   const uri = buildObsidianUri(result.title, markdown, await getObsidianVault());
   if (uri.length > OBSIDIAN_URI_LIMIT) {
     // Too large for the obsidian:// protocol handler — hand off via clipboard.
