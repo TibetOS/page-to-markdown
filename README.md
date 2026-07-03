@@ -62,6 +62,7 @@ No dependencies — just Node and the `zip` CLI.
 - **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
 - **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
 - **On-device AI summary & tags (opt-in)** — a TL;DR field and 3–6 topic tags via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
+- **On-device translation (opt-in)** — translate the preview's prose with Chrome's built-in Translator while code blocks, links, and front matter stay untouched
 - **Math survives** — KaTeX/MathML formulas come out as `$…$` / `$$…$$` LaTeX (recovered from the embedded TeX annotations), not rendered-glyph soup
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
 - **Hebrew/RTL support** — Unicode filenames and content
@@ -109,7 +110,8 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 - **v1.10** — Math extraction: KaTeX/MathJax/MathML → `$…$` / `$$…$$` LaTeX ✅
 - **v1.11** — Opt-in on-device AI topic tags via the Prompt API ✅
 - **v1.12** — Per-site output templates with `{{variables}}` ✅
-- **Next** — Defuddle extraction engine, on-device translate
+- **v1.13** — On-device translation in the preview (structure-preserving) ✅
+- **Next** — Defuddle extraction engine (pending third-party bundle review)
 
 See [`ROADMAP.md`](ROADMAP.md) for the full market & technology intelligence analysis and phased plan.
 

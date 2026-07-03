@@ -103,6 +103,18 @@
   </fieldset>
 
   <fieldset style="margin-top: 18px;">
+    <legend>Translation</legend>
+    <div class="field" style="border-bottom: none;">
+      <label for="translateTarget" style="flex: 1;">
+        <div class="name">Target language</div>
+        <div class="desc">Optional. Adds a <strong>🌐 Translate</strong> button to the preview that translates the page's prose on-device (Chrome's built-in Translator) — code blocks, links, and front matter are left untouched. Use a two-letter code like <code>en</code>, <code>he</code>, <code>es</code>. Leave blank to disable.</div>
+        <input type="text" id="translateTarget" placeholder="en" maxlength="8"
+          style="margin-top: 6px; width: 120px; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
+      </label>
+    </div>
+  </fieldset>
+
+  <fieldset style="margin-top: 18px;">
     <legend>Per-site templates</legend>
     <div class="field" style="border-bottom: none; display: block;">
       <div class="desc" style="margin-bottom: 8px;">

@@ -15,6 +15,7 @@ const meta = document.getElementById("meta");
 const downloadEditedBtn = document.getElementById("downloadEdited");
 const copyEditedBtn = document.getElementById("copyEdited");
 const copyAIEditedBtn = document.getElementById("copyAIEdited");
+const translateBtn = document.getElementById("translate");
 const backBtn = document.getElementById("back");
 
 // Original labels, so we can restore them after a busy state.
@@ -28,6 +29,7 @@ const labels = new Map([
   [downloadEditedBtn, "⬇ Download"],
   [copyEditedBtn, "📋 Copy"],
   [copyAIEditedBtn, "✨ Copy for AI"],
+  [translateBtn, "🌐 Translate"],
 ]);
 const allButtons = [...labels.keys(), backBtn];
 
@@ -296,8 +298,9 @@ previewBtn.addEventListener("click", async () => {
   setBusy(true, previewBtn, "Extracting...");
   try {
     const result = await extractWithExtras();
-    current = { title: result.title || "page", url: result.url || "" };
+    current = { title: result.title || "page", url: result.url || "", lang: result.meta?.lang || "" };
     editor.value = await buildOutput(result);
+    translateBtn.hidden = !(await getTranslateTarget()) || typeof Translator === "undefined";
     showPreview();
   } catch (err) {
     showError(err);
@@ -317,6 +320,43 @@ backBtn.addEventListener("click", () => {
 
 // Open the options page to choose which front-matter fields are included.
 settingsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
+
+// 🌐 Translate the preview in place using Chrome's on-device Translator.
+// Explicit user action: creating the translator inside this click may fetch
+// the (small) language pack, with progress shown in the status line.
+translateBtn.addEventListener("click", async () => {
+  setBusy(true, translateBtn, "Translating...");
+  try {
+    const target = await getTranslateTarget();
+    if (!target) throw new Error("Set a target language in settings first.");
+    if (typeof Translator === "undefined") throw new Error("Translation isn't supported by this browser.");
+
+    const source = (current.lang || "en").split("-")[0].toLowerCase();
+    if (source === target) throw new Error(`Page already appears to be "${target}".`);
+
+    const translator = await Translator.create({
+      sourceLanguage: source,
+      targetLanguage: target,
+      monitor(m) {
+        m.addEventListener("downloadprogress", (e) => {
+          const percent = e.total ? Math.round((e.loaded / e.total) * 100) : Math.round((e.loaded || 0) * 100);
+          status.textContent = `Downloading language pack… ${percent}%`;
+        });
+      },
+    });
+    try {
+      editor.value = await translateMarkdown(editor.value, (text) => translator.translate(text));
+      updateMeta();
+      showSuccess(`Translated ${source} → ${target}.`);
+    } finally {
+      translator.destroy?.();
+    }
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
 
 // Preview actions operate on the (possibly edited) editor content.
 

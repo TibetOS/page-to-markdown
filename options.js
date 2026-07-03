@@ -24,6 +24,7 @@ const aiSummaryEl = document.getElementById("aiSummary");
 const aiTagsEl = document.getElementById("aiTags");
 const templatesEl = document.getElementById("templates");
 const addTemplateBtn = document.getElementById("addTemplate");
+const translateTargetEl = document.getElementById("translateTarget");
 const aiStatusEl = document.getElementById("aiStatus");
 const downloadModelBtn = document.getElementById("downloadModel");
 
@@ -164,6 +165,13 @@ aiTagsEl.addEventListener("change", async () => {
   flashSaved();
 });
 
+translateTargetEl.addEventListener("change", async () => {
+  const value = translateTargetEl.value.trim().toLowerCase();
+  translateTargetEl.value = value;
+  await chrome.storage.sync.set({ translateTarget: value });
+  flashSaved();
+});
+
 async function refreshAiStatus() {
   downloadModelBtn.hidden = true;
   if (typeof Summarizer === "undefined") {
@@ -218,5 +226,6 @@ downloadModelBtn.addEventListener("click", async () => {
   aiSummaryEl.checked = await getAiSummaryEnabled();
   aiTagsEl.checked = await getAiTagsEnabled();
   for (const tpl of await getTemplates()) templatesEl.append(templateRow(tpl));
+  translateTargetEl.value = await getTranslateTarget();
   refreshAiStatus();
 })();

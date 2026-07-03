@@ -100,6 +100,79 @@ function buildLeanMarkdown(markdown, title, url) {
   return `# ${title || "Untitled"}\nSource: ${url || ""}\n\n${body}`;
 }
 
+// --- On-device translation ---
+
+// The user's target language for the preview Translate action ("" = off).
+async function getTranslateTarget() {
+  try {
+    const stored = await chrome.storage.sync.get("translateTarget");
+    return (stored.translateTarget || "").trim().toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+// Translate a Markdown document's prose while preserving its structure.
+// `translate` is an async (text) => text function (injected so this stays
+// testable). Untouched: YAML front matter, fenced code blocks, blank lines,
+// leading markdown syntax (headings/lists/blockquotes), inline code spans,
+// and link/image URLs (protected with placeholder tokens during translation).
+async function translateMarkdown(markdown, translate) {
+  const lines = String(markdown).split("\n");
+  const out = [];
+  let inFence = false;
+  let inFrontMatter = lines[0] === "---";
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    if (inFrontMatter) {
+      out.push(line);
+      if (i > 0 && line === "---") inFrontMatter = false;
+      continue;
+    }
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      out.push(line);
+      continue;
+    }
+    if (inFence || line.trim() === "") {
+      out.push(line);
+      continue;
+    }
+
+    const m = line.match(/^([ \t]*(?:(?:[>*+-]|\d+\.|#{1,6})\s+)*)(.*)$/);
+    const prefix = m[1];
+    const rest = m[2];
+    if (!rest.trim()) {
+      out.push(line);
+      continue;
+    }
+
+    // Shield inline code spans and link/image URL parts behind ⟦n⟧ tokens so
+    // the translator only ever sees prose. Each token maps 1:1 to its
+    // original text, so restoring is a plain substitution.
+    const shielded = [];
+    const shield = (s) => {
+      shielded.push(s);
+      return `⟦${shielded.length - 1}⟧`;
+    };
+    const shieldedText = rest
+      .replace(/`[^`]*`/g, shield)
+      .replace(/\]\([^)]*\)/g, shield);
+
+    let translated;
+    try {
+      translated = await translate(shieldedText);
+    } catch {
+      translated = shieldedText; // per-line best effort — keep the original
+    }
+    const restored = String(translated).replace(/⟦(\d+)⟧/g, (s, n) => shielded[Number(n)] ?? s);
+    out.push(prefix + restored);
+  }
+  return out.join("\n");
+}
+
 // --- Per-site templates ---
 // A template is { pattern, template }. pattern is a domain: "example.com"
 // matches example.com and any subdomain; "*" matches every site. The first
