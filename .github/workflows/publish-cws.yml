@@ -1,0 +1,38 @@
+name: Publish to Chrome Web Store
+
+# Uploads the built Chrome package to the Chrome Web Store and publishes it.
+# Runs on demand (Actions tab → Run workflow) or when a GitHub release is
+# published.
+#
+# Requires four repository secrets (Settings → Secrets and variables →
+# Actions), obtained per https://github.com/fregante/chrome-webstore-upload-keys:
+#   CWS_EXTENSION_ID   — the extension's ID from its store URL
+#   CWS_CLIENT_ID      — Google OAuth client ID
+#   CWS_CLIENT_SECRET  — Google OAuth client secret
+#   CWS_REFRESH_TOKEN  — OAuth refresh token for the CWS API
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build extension packages
+        run: node scripts/build.mjs
+
+      - name: Upload & publish to the Chrome Web Store
+        run: npx -y chrome-webstore-upload-cli@3 upload --source dist/chrome --auto-publish
+        env:
+          EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}

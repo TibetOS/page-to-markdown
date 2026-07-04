@@ -71,4 +71,12 @@ cloud APIs. Page content goes only where the user explicitly sends it
 
 ## Package to upload
 
-Run `node scripts/build.mjs` and upload `dist/page-to-markdown-chrome-v<version>.zip`.
+Run `node scripts/build.mjs` and upload `dist/page-to-markdown-chrome-v<version>.zip`
+(built packages are not checked into git — the build is deterministic from source).
+
+## Automated publishing
+
+`.github/workflows/publish-cws.yml` uploads and publishes automatically — run it from the
+Actions tab or publish a GitHub release. One-time setup: add the four `CWS_*` repository
+secrets (extension ID + OAuth client id/secret/refresh token; see
+https://github.com/fregante/chrome-webstore-upload-keys for how to generate them).
