@@ -9,9 +9,10 @@ One-click Chrome extension to extract any web page's content as a clean `.md` fi
    - **⬇ Extract .md** — download a Markdown file with YAML front matter (title, author, source URL, timestamp)
    - **📋 Copy Markdown** — copy the full Markdown to your clipboard
    - **✨ Copy for AI** — copy token-lean Markdown (no front matter, no images) plus a token estimate, ready to paste into ChatGPT/Claude
-   - **🟣 Send to Obsidian** — create a note straight in your vault via the `obsidian://` URI (set a default vault in settings)
+   - **🟣 Send to Obsidian** — create a note straight in your vault via the `obsidian://` URI (set a default vault and folder in settings, or append to today's daily note)
    - **📤 Send to webhook** — POST the Markdown as JSON to your own endpoint (n8n, Zapier, Make, Notion via a proxy); appears once you configure a URL in settings
-   - **👁 Preview & edit** — review the Markdown in an editable pane (with live word/token counts), tweak it, then download or copy the result
+   - **🗂 Clip all tabs** — extract every https tab in the window into one combined Markdown file (asks for the extra permissions on first use)
+   - **👁 Preview & edit** — review the Markdown in an editable pane (with live word/token counts), tweak it, then download or copy the result — or export it as **🧩 RAG chunks** (JSONL) / **📊 CSV tables**, and **🐞 report a bad extraction** in one click
 
 Or skip the popup entirely:
 - **Keyboard shortcut** — `Ctrl+Shift+M` (`⌘+Shift+M` on Mac) opens the popup; customize at `chrome://extensions/shortcuts`
@@ -77,7 +78,10 @@ The clips directory defaults to `~/Downloads`; override with `--dir <path>` or t
 - **Rich, valid YAML front matter** — title, author, source, site, publish date, language, excerpt, timestamp — safely escaped so titles with `:`, quotes, or line breaks can't break the YAML
 - **Configurable fields** — toggle which front-matter fields are included from the settings page
 - **Per-site templates** — override the output layout per domain with `{{title}}`, `{{content}}`, `{{frontmatter}}`, `{{tags}}`, `{{date}}` and more; first matching domain wins
-- **Send to Obsidian** — one click drops the note into your vault (optional default vault in settings)
+- **Batch capture** — clip all open https tabs into a single Markdown file; the extra `tabs` + host permissions are optional and only requested when you first use it
+- **RAG-ready export** — download the preview as JSONL chunks split by headings, each carrying its heading trail, source, and token estimate — made for embedding pipelines
+- **Tables → CSV** — every Markdown table in the preview downloads as its own RFC 4180 CSV file
+- **Send to Obsidian** — one click drops the note into your vault (optional default vault and folder in settings), or appends to today's daily note via the Advanced URI plugin
 - **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
 - **On-device AI summary & tags (opt-in)** — a TL;DR field and 3–6 topic tags via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
 - **On-device translation (opt-in)** — translate the preview's prose with Chrome's built-in Translator while code blocks, links, and front matter stay untouched
@@ -85,7 +89,8 @@ The clips directory defaults to `~/Downloads`; override with `--dir <path>` or t
 - **Math survives** — KaTeX/MathML formulas come out as `$…$` / `$$…$$` LaTeX (recovered from the embedded TeX annotations), not rendered-glyph soup
 - **MCP bridge** — a zero-dependency local server that lets Claude / Cursor / any MCP client list, read, and search your clips as context
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
-- **Hebrew/RTL support** — Unicode filenames and content
+- **Hebrew/RTL support** — Unicode filenames and content, plus a fully translated Hebrew UI (RTL layout included) via `_locales`
+- **Report a bad extraction** — one click opens a pre-filled GitHub issue with the page URL and engine used (never page content), so extraction quality keeps improving
 - **Zero cloud** — everything runs locally, no data leaves your browser
 
 ## Output Example
@@ -115,6 +120,8 @@ Researchers discovered that smaller, more efficient models...
 
 If you configure a **webhook**, the browser asks you to grant access to *that one origin* at save time (declared as an optional host permission — nothing is granted by default, and no other site is ever reachable).
 
+**Clip all tabs** needs to enumerate the window's tabs and inject into background tabs, so the first click asks for the optional `tabs` permission plus https host access — declined, nothing changes; granted, it's used only while that button runs.
+
 ## Roadmap
 
 - **v1.0** — Readability + Turndown extraction
@@ -135,8 +142,9 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 
 - **v1.15** — MCP bridge: expose clips to local AI agents (`mcp/server.mjs`) ✅
 - **v1.16** — Opt-in on-device AI cleanup: flag & remove leftover boilerplate in the preview ✅
+- **v1.17** — Batch tab capture, RAG chunk export (JSONL), tables → CSV, Obsidian folder & daily-note append, Hebrew UI (RTL), bad-extraction reporting ✅
 
-That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered, plus the first exploratory-tier item. Still under evaluation: batch/multi-tab capture, local annotation library, WebLLM fallback for browsers without built-in AI.
+That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered, plus the exploratory-tier batch capture and MCP bridge. Still under evaluation: local annotation library, WebLLM fallback for browsers without built-in AI.
 
 ## License
 

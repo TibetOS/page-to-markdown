@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Page to Markdown — Settings</title>
+  <title data-i18n="optTitle">Page to Markdown — Settings</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -26,6 +26,7 @@
     h1 span { font-size: 22px; }
     p.lead { color: #94a3b8; font-size: 13px; margin-bottom: 20px; }
     fieldset { border: 1px solid #333; border-radius: 10px; padding: 8px 16px; }
+    fieldset + fieldset { margin-top: 18px; }
     legend { padding: 0 8px; font-size: 13px; font-weight: 600; color: #cbd5e1; }
     .field {
       display: flex;
@@ -35,106 +36,180 @@
       border-bottom: 1px solid #262640;
     }
     .field:last-child { border-bottom: none; }
-    .field input { margin-top: 3px; width: 16px; height: 16px; accent-color: #7c3aed; cursor: pointer; }
-    .field label { cursor: pointer; }
+    .field.block { display: block; }
+    .field input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; accent-color: #7c3aed; cursor: pointer; }
+    .field label { cursor: pointer; flex: 1; }
     .field .name { font-size: 14px; color: #e0e0e0; font-weight: 600; }
     .field .desc { font-size: 12px; color: #8b93a7; }
+    .text-input {
+      margin-top: 6px;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #0f0f1e;
+      color: #e0e0e0;
+      font-size: 13px;
+    }
+    .text-input.short { width: 120px; }
+    .action-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .action-btn.purple { background: #7c3aed; }
+    .action-btn.teal { background: #0d9488; }
+    .action-btn.slate { background: #475569; }
+    .status-note { font-size: 12px; color: #94a3b8; align-self: center; }
+    .tpl-row { margin-bottom: 12px; padding: 10px; border: 1px solid #262640; border-radius: 8px; }
+    .tpl-pattern {
+      width: 60%;
+      padding: 6px 10px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #0f0f1e;
+      color: #e0e0e0;
+      font-size: 13px;
+    }
+    .tpl-remove {
+      float: inline-end;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      background: #7f1d1d;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .tpl-body {
+      width: 100%;
+      height: 90px;
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px solid #333;
+      border-radius: 6px;
+      background: #0f0f1e;
+      color: #e0e0e0;
+      font-size: 12px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      resize: vertical;
+    }
+    .desc.spaced { margin-bottom: 8px; }
+    .add-btn { margin-top: 8px; }
     code { background: #0f0f1e; padding: 1px 5px; border-radius: 4px; font-size: 12px; }
     #saved { margin-top: 16px; font-size: 12px; color: #4ade80; min-height: 16px; }
   </style>
 </head>
 <body>
   <h1><span>📄</span> Page to Markdown</h1>
-  <p class="lead">Choose which fields appear in the YAML front matter of extracted Markdown. Changes apply to future extractions. Everything runs locally — settings sync via your browser account only.</p>
+  <p class="lead" data-i18n="optLead">Choose which fields appear in the YAML front matter of extracted Markdown. Changes apply to future extractions. Everything runs locally — settings sync via your browser account only.</p>
 
   <fieldset>
-    <legend>Front-matter fields</legend>
+    <legend data-i18n="legendFields">Front-matter fields</legend>
     <div id="fields"></div>
   </fieldset>
 
-  <fieldset style="margin-top: 18px;">
-    <legend>Obsidian</legend>
+  <fieldset>
+    <legend data-i18n="legendObsidian">Obsidian</legend>
     <div class="field">
-      <label for="vault" style="flex: 1;">
-        <div class="name">Default vault</div>
-        <div class="desc">Optional. Used by <strong>Send to Obsidian</strong>. Leave blank to use your last-focused vault.</div>
-        <input type="text" id="vault" placeholder="My Vault"
-          style="margin-top: 6px; width: 100%; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
+      <label for="vault">
+        <div class="name" data-i18n="optVaultName">Default vault</div>
+        <div class="desc" data-i18n="optVaultDesc">Optional. Used by Send to Obsidian. Leave blank to use your last-focused vault.</div>
+        <input type="text" id="vault" class="text-input" placeholder="My Vault" data-i18n-placeholder="phVault">
+      </label>
+    </div>
+    <div class="field">
+      <label for="obsidianFolder">
+        <div class="name" data-i18n="optFolderName">Folder for new notes</div>
+        <div class="desc" data-i18n="optFolderDesc">Optional. Files clipped notes under this vault-relative folder (e.g. Clippings/Web). Leave blank for the vault root.</div>
+        <input type="text" id="obsidianFolder" class="text-input" placeholder="Clippings" data-i18n-placeholder="phFolder">
+      </label>
+    </div>
+    <div class="field">
+      <input type="checkbox" id="obsidianDaily">
+      <label for="obsidianDaily">
+        <div class="name" data-i18n="optDailyName">Append to today's daily note instead</div>
+        <div class="desc" data-i18n="optDailyDesc">Send to Obsidian appends the clip to today's daily note rather than creating a new note. Requires the community Advanced URI plugin in your vault.</div>
       </label>
     </div>
   </fieldset>
 
-  <fieldset style="margin-top: 18px;">
-    <legend>On-device AI (Gemini Nano)</legend>
+  <fieldset>
+    <legend data-i18n="legendAi">On-device AI (Gemini Nano)</legend>
     <div class="field">
       <input type="checkbox" id="aiSummary">
       <label for="aiSummary">
-        <div class="name">Add a TL;DR summary to front matter</div>
-        <div class="desc">Uses Chrome's built-in Summarizer — everything runs locally, nothing leaves your device. Only applies when the model is already installed; we never download it without you asking.</div>
+        <div class="name" data-i18n="optSummaryName">Add a TL;DR summary to front matter</div>
+        <div class="desc" data-i18n="optSummaryDesc">Uses Chrome's built-in Summarizer — everything runs locally, nothing leaves your device. Only applies when the model is already installed; we never download it without you asking.</div>
       </label>
     </div>
     <div class="field">
       <input type="checkbox" id="aiTags">
       <label for="aiTags">
-        <div class="name">Add topic tags to front matter</div>
-        <div class="desc">3–6 lowercase tags suggested by the same local model — handy for Obsidian/PKM organization. Same rules: local-only, and only when the model is already installed.</div>
+        <div class="name" data-i18n="optTagsName">Add topic tags to front matter</div>
+        <div class="desc" data-i18n="optTagsDesc">3–6 lowercase tags suggested by the same local model — handy for Obsidian/PKM organization. Same rules: local-only, and only when the model is already installed.</div>
       </label>
     </div>
     <div class="field">
       <input type="checkbox" id="aiCleanup">
       <label for="aiCleanup">
-        <div class="name">Clean up leftover boilerplate in preview</div>
-        <div class="desc">Adds a <strong>🧹 Clean up</strong> button to the preview that asks the local model to flag leftover menus, cookie banners, share buttons, and footer junk — flagged blocks are removed, never rewritten. Same rules: local-only, and only when the model is already installed.</div>
+        <div class="name" data-i18n="optCleanupName">Clean up leftover boilerplate in preview</div>
+        <div class="desc" data-i18n="optCleanupDesc">Adds a 🧹 Clean up button to the preview that asks the local model to flag leftover menus, cookie banners, share buttons, and footer junk — flagged blocks are removed, never rewritten. Same rules: local-only, and only when the model is already installed.</div>
       </label>
     </div>
-    <div class="field" style="border-bottom: none;">
-      <span id="aiStatus" style="font-size: 12px; color: #94a3b8; align-self: center;">Checking availability…</span>
-      <button id="downloadModel" hidden style="padding: 8px 14px; border: none; border-radius: 6px; background: #0d9488; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">Download model</button>
-    </div>
-  </fieldset>
-
-  <fieldset style="margin-top: 18px;">
-    <legend>Webhook</legend>
     <div class="field">
-      <label for="webhook" style="flex: 1;">
-        <div class="name">Webhook URL</div>
-        <div class="desc">Optional. <strong>Send to webhook</strong> POSTs the extracted Markdown as JSON — works with n8n, Zapier, Make, or your own endpoint (Notion via a small proxy). HTTPS only (localhost may use HTTP). Saving asks the browser to grant access to just that site.</div>
-        <input type="text" id="webhook" placeholder="https://example.com/hook"
-          style="margin-top: 6px; width: 100%; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
-      </label>
-    </div>
-    <div class="field" style="border-bottom: none;">
-      <button id="saveWebhook" style="padding: 8px 14px; border: none; border-radius: 6px; background: #7c3aed; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">Save &amp; grant access</button>
-      <span id="webhookStatus" style="font-size: 12px; color: #94a3b8; align-self: center;"></span>
+      <span id="aiStatus" class="status-note" data-i18n="aiChecking">Checking availability…</span>
+      <button id="downloadModel" class="action-btn teal" data-i18n="btnDownloadModel" hidden>Download model</button>
     </div>
   </fieldset>
 
-  <fieldset style="margin-top: 18px;">
-    <legend>Translation</legend>
-    <div class="field" style="border-bottom: none;">
-      <label for="translateTarget" style="flex: 1;">
-        <div class="name">Target language</div>
-        <div class="desc">Optional. Adds a <strong>🌐 Translate</strong> button to the preview that translates the page's prose on-device (Chrome's built-in Translator) — code blocks, links, and front matter are left untouched. Use a two-letter code like <code>en</code>, <code>he</code>, <code>es</code>. Leave blank to disable.</div>
-        <input type="text" id="translateTarget" placeholder="en" maxlength="8"
-          style="margin-top: 6px; width: 120px; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
+  <fieldset>
+    <legend data-i18n="legendWebhook">Webhook</legend>
+    <div class="field">
+      <label for="webhook">
+        <div class="name" data-i18n="optWebhookName">Webhook URL</div>
+        <div class="desc" data-i18n="optWebhookDesc">Optional. Send to webhook POSTs the extracted Markdown as JSON — works with n8n, Zapier, Make, or your own endpoint (Notion via a small proxy). HTTPS only (localhost may use HTTP). Saving asks the browser to grant access to just that site.</div>
+        <input type="text" id="webhook" class="text-input" placeholder="https://example.com/hook">
+      </label>
+    </div>
+    <div class="field">
+      <button id="saveWebhook" class="action-btn purple" data-i18n="btnSaveWebhook">Save &amp; grant access</button>
+      <span id="webhookStatus" class="status-note"></span>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend data-i18n="legendTranslate">Translation</legend>
+    <div class="field">
+      <label for="translateTarget">
+        <div class="name" data-i18n="optTargetName">Target language</div>
+        <div class="desc" data-i18n="optTargetDesc">Optional. Adds a 🌐 Translate button to the preview that translates the page's prose on-device (Chrome's built-in Translator) — code blocks, links, and front matter are left untouched. Use a two-letter code like en, he, es. Leave blank to disable.</div>
+        <input type="text" id="translateTarget" class="text-input short" placeholder="en" maxlength="8">
       </label>
     </div>
   </fieldset>
 
-  <fieldset style="margin-top: 18px;">
-    <legend>Per-site templates</legend>
-    <div class="field" style="border-bottom: none; display: block;">
-      <div class="desc" style="margin-bottom: 8px;">
-        Override the output layout for matching sites. Pattern is a domain (<code>example.com</code> matches subdomains too) or <code>*</code> for every site; the first match wins.
-        Variables: <code>{{frontmatter}}</code> <code>{{content}}</code> <code>{{title}}</code> <code>{{author}}</code> <code>{{source}}</code> <code>{{site}}</code> <code>{{published}}</code> <code>{{lang}}</code> <code>{{excerpt}}</code> <code>{{summary}}</code> <code>{{tags}}</code> <code>{{date}}</code> <code>{{extracted}}</code>
+  <fieldset>
+    <legend data-i18n="legendTemplates">Per-site templates</legend>
+    <div class="field block">
+      <div class="desc" data-i18n="optTemplatesDesc">
+        Override the output layout for matching sites. Pattern is a domain (example.com matches subdomains too) or * for every site; the first match wins. Variables:
+      </div>
+      <div class="desc spaced">
+        <code>{{frontmatter}}</code> <code>{{content}}</code> <code>{{title}}</code> <code>{{author}}</code> <code>{{source}}</code> <code>{{site}}</code> <code>{{published}}</code> <code>{{lang}}</code> <code>{{excerpt}}</code> <code>{{summary}}</code> <code>{{tags}}</code> <code>{{date}}</code> <code>{{extracted}}</code>
       </div>
       <div id="templates"></div>
-      <button id="addTemplate" style="margin-top: 8px; padding: 8px 14px; border: none; border-radius: 6px; background: #475569; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;">+ Add template</button>
+      <button id="addTemplate" class="action-btn slate add-btn" data-i18n="btnAddTemplate">+ Add template</button>
     </div>
   </fieldset>
 
   <div id="saved"></div>
 
+  <script src="i18n.js"></script>
   <script src="shared.js"></script>
   <script src="options.js"></script>
 </body>

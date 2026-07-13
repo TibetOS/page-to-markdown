@@ -43,10 +43,18 @@
     #obsidian:hover { background: #5b3fb0; }
     #webhook { background: #b45309; }
     #webhook:hover { background: #92400e; }
+    #batch { background: #a21caf; }
+    #batch:hover { background: #86198f; }
     #translate { background: #0369a1; margin-top: 8px; }
     #translate:hover { background: #075985; }
     #cleanup { background: #15803d; margin-top: 8px; }
     #cleanup:hover { background: #166534; }
+    #rag { background: #4f46e5; }
+    #rag:hover { background: #4338ca; }
+    #csv { background: #0e7490; }
+    #csv:hover { background: #155e75; }
+    #report { background: transparent; color: #94a3b8; font-weight: 500; padding: 6px; }
+    #report:hover { color: #e0e0e0; }
     #preview-btn { background: #475569; }
     #preview-btn:hover { background: #3f4a5c; }
     #settings { background: transparent; color: #94a3b8; font-weight: 500; }
@@ -84,35 +92,43 @@
     }
     .actions { display: flex; gap: 8px; }
     .actions .btn { margin-top: 0; }
+    .actions + .actions { margin-top: 8px; }
   </style>
 </head>
 <body>
   <h1><span>📄</span> Page to Markdown</h1>
 
   <section id="main">
-    <button id="download" class="btn">⬇ Extract .md</button>
-    <button id="copy" class="btn">📋 Copy Markdown</button>
-    <button id="copyAI" class="btn">✨ Copy for AI</button>
-    <button id="obsidian" class="btn">🟣 Send to Obsidian</button>
-    <button id="webhook" class="btn" hidden>📤 Send to webhook</button>
-    <button id="preview-btn" class="btn">👁 Preview &amp; edit</button>
-    <button id="settings" class="btn">⚙ Front-matter settings</button>
+    <button id="download" class="btn" data-i18n="btnDownload">⬇ Extract .md</button>
+    <button id="copy" class="btn" data-i18n="btnCopy">📋 Copy Markdown</button>
+    <button id="copyAI" class="btn" data-i18n="btnCopyAI">✨ Copy for AI</button>
+    <button id="obsidian" class="btn" data-i18n="btnObsidian">🟣 Send to Obsidian</button>
+    <button id="webhook" class="btn" data-i18n="btnWebhook" hidden>📤 Send to webhook</button>
+    <button id="batch" class="btn" data-i18n="btnBatch">🗂 Clip all tabs</button>
+    <button id="preview-btn" class="btn" data-i18n="btnPreview">👁 Preview &amp; edit</button>
+    <button id="settings" class="btn" data-i18n="btnSettings">⚙ Front-matter settings</button>
   </section>
 
   <section id="preview" hidden>
-    <textarea id="editor" spellcheck="false" aria-label="Editable Markdown preview"></textarea>
+    <textarea id="editor" spellcheck="false" aria-label="Editable Markdown preview" data-i18n-aria="editorAria"></textarea>
     <div id="meta"></div>
     <div class="actions">
-      <button id="downloadEdited" class="btn">⬇ Download</button>
-      <button id="copyEdited" class="btn">📋 Copy</button>
-      <button id="copyAIEdited" class="btn">✨ Copy for AI</button>
+      <button id="downloadEdited" class="btn" data-i18n="btnDownloadShort">⬇ Download</button>
+      <button id="copyEdited" class="btn" data-i18n="btnCopyShort">📋 Copy</button>
+      <button id="copyAIEdited" class="btn" data-i18n="btnCopyAI">✨ Copy for AI</button>
     </div>
-    <button id="cleanup" class="btn" hidden>🧹 Clean up</button>
-    <button id="translate" class="btn" hidden>🌐 Translate</button>
-    <button id="back" class="btn">← Back</button>
+    <div class="actions">
+      <button id="rag" class="btn" data-i18n="btnRag">🧩 RAG chunks</button>
+      <button id="csv" class="btn" data-i18n="btnCsv">📊 Tables → CSV</button>
+    </div>
+    <button id="cleanup" class="btn" data-i18n="btnCleanup" hidden>🧹 Clean up</button>
+    <button id="translate" class="btn" data-i18n="btnTranslate" hidden>🌐 Translate</button>
+    <button id="report" class="btn" data-i18n="btnReport">🐞 Report a bad extraction</button>
+    <button id="back" class="btn" data-i18n="btnBack">← Back</button>
   </section>
 
   <div id="status"></div>
+  <script src="i18n.js"></script>
   <script src="shared.js"></script>
   <script src="popup.js"></script>
 </body>

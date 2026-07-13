@@ -28,6 +28,8 @@ const ASSETS = [
   "options.html",
   "options.js",
   "shared.js",
+  "i18n.js",
+  "_locales",
   "lib",
   "icons",
 ];

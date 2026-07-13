@@ -100,6 +100,125 @@ function buildLeanMarkdown(markdown, title, url) {
   return `# ${title || "Untitled"}\nSource: ${url || ""}\n\n${body}`;
 }
 
+// --- RAG chunk export ---
+
+// Split a Markdown body into heading-scoped chunks for RAG ingestion.
+// Front matter and images are stripped; fenced code stays inside its chunk.
+// Each chunk records the heading trail that leads to it (and opens with its
+// own heading line), so embedded chunks keep their document context. Text
+// before the first heading gets an empty trail.
+function chunkMarkdown(markdown) {
+  const lines = stripImages(stripFrontMatter(String(markdown))).split("\n");
+  const chunks = [];
+  const trail = []; // open headings, as { level, text }
+  let current = [];
+  let inFence = false;
+  const flush = () => {
+    const text = current.join("\n").trim();
+    if (text) chunks.push({ heading_path: trail.map((h) => h.text), text });
+    current = [];
+  };
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
+    const heading = inFence ? null : line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      flush();
+      const level = heading[1].length;
+      while (trail.length && trail[trail.length - 1].level >= level) trail.pop();
+      trail.push({ level, text: heading[2].trim() });
+    }
+    current.push(line);
+  }
+  flush();
+  return chunks;
+}
+
+// Serialize chunks as JSONL for ingestion pipelines: one object per line
+// carrying provenance, the heading trail, and a token estimate.
+function buildRagJsonl(chunks, meta) {
+  return (
+    chunks
+      .map((c, i) =>
+        JSON.stringify({
+          title: meta?.title || "",
+          source: meta?.source || "",
+          heading_path: c.heading_path,
+          chunk: i,
+          tokens: estimateTokens(c.text),
+          text: c.text,
+        })
+      )
+      .join("\n") + "\n"
+  );
+}
+
+// --- Markdown tables → CSV ---
+
+// Split one Markdown table row into cell strings. "\|" escapes a literal
+// pipe and "\\" an escaped backslash, so "\\|" is a backslash followed by a
+// cell separator.
+function splitTableRow(line) {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  const cells = [];
+  let cell = "";
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (ch === "\\") {
+      const next = trimmed[i + 1];
+      if (next === "\\" || next === "|") {
+        cell += next;
+        i++;
+      } else {
+        cell += ch;
+      }
+    } else if (ch === "|") {
+      cells.push(cell.trim());
+      cell = "";
+    } else {
+      cell += ch;
+    }
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+// Quote a CSV cell per RFC 4180.
+function csvCell(value) {
+  const s = String(value ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// Find GitHub-style tables (header row, |---| separator row, body rows) in a
+// Markdown document, ignoring anything inside code fences. GFM makes leading/
+// trailing pipes optional, so a run is any streak of lines containing an
+// unescaped pipe; the table proper starts at the row above the first
+// dashes/colons separator row (pipe-containing prose before it is skipped).
+// Returns one CSV string per table; cells keep their inline Markdown as-is.
+function markdownTablesToCsv(markdown) {
+  const tables = [];
+  let run = [];
+  let inFence = false;
+  const flushRun = () => {
+    const sep = run.findIndex((l, i) => i >= 1 && /^[\s:|-]+$/.test(l) && l.includes("-"));
+    if (sep >= 1) {
+      const rows = [run[sep - 1], ...run.slice(sep + 1)].map(splitTableRow);
+      tables.push(rows.map((r) => r.map(csvCell).join(",")).join("\n") + "\n");
+    }
+    run = [];
+  };
+  for (const line of String(markdown).split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      flushRun();
+      continue;
+    }
+    if (!inFence && /(?<!\\)\|/.test(line)) run.push(line);
+    else flushRun();
+  }
+  flushRun();
+  return tables;
+}
+
 // --- On-device translation ---
 
 // The user's target language for the preview Translate action ("" = off).
@@ -241,21 +360,44 @@ const OBSIDIAN_URI_LIMIT = 30000;
 
 // Build an obsidian://new URI that creates a note with the given content.
 // vault is optional — Obsidian uses the last-focused vault when it's omitted.
-function buildObsidianUri(title, content, vault) {
+// folder (optional) files the note under a vault-relative path via the
+// "file" parameter instead of "name".
+function buildObsidianUri(title, content, vault, folder) {
   const params = new URLSearchParams();
   if (vault) params.set("vault", vault);
-  params.set("name", (title || "page").slice(0, 120));
+  const name = (title || "page").slice(0, 120);
+  const dir = (folder || "").trim().replace(/^\/+|\/+$/g, "");
+  if (dir) params.set("file", `${dir}/${name}`);
+  else params.set("name", name);
   params.set("content", content);
   return `obsidian://new?${params.toString()}`;
 }
 
-// The user's optional default Obsidian vault name.
-async function getObsidianVault() {
+// Build a URI that appends the content to today's daily note. Uses the
+// community "Advanced URI" plugin's scheme — core obsidian:// has no
+// daily-note action — so it requires that plugin in the target vault.
+function buildObsidianDailyUri(content, vault) {
+  const params = new URLSearchParams();
+  if (vault) params.set("vault", vault);
+  params.set("daily", "true");
+  params.set("data", content);
+  params.set("mode", "append");
+  return `obsidian://adv-uri?${params.toString()}`;
+}
+
+// The user's Obsidian destination settings: optional default vault name,
+// optional folder for new notes, and whether Send to Obsidian should append
+// to today's daily note instead of creating a note.
+async function getObsidianSettings() {
   try {
-    const stored = await chrome.storage.sync.get("obsidianVault");
-    return (stored.obsidianVault || "").trim();
+    const stored = await chrome.storage.sync.get(["obsidianVault", "obsidianFolder", "obsidianDaily"]);
+    return {
+      vault: (stored.obsidianVault || "").trim(),
+      folder: (stored.obsidianFolder || "").trim(),
+      daily: stored.obsidianDaily === true,
+    };
   } catch {
-    return "";
+    return { vault: "", folder: "", daily: false };
   }
 }
 
