@@ -295,6 +295,85 @@ function parseAiTags(text) {
     .slice(0, 6);
 }
 
+// Whether the user opted in to on-device AI boilerplate cleanup (default off).
+async function getAiCleanupEnabled() {
+  try {
+    const stored = await chrome.storage.sync.get("aiCleanup");
+    return stored.aiCleanup === true;
+  } catch {
+    return false;
+  }
+}
+
+// --- On-device AI cleanup ---
+// The model only ever *classifies* blocks as boilerplate; flagged blocks are
+// dropped verbatim, never rewritten — so cleanup can't hallucinate or reword
+// the user's content.
+
+// Split a Markdown document into its front matter (kept opaque) and an array
+// of blank-line-separated blocks. Fenced code blocks stay whole even when they
+// contain blank lines.
+function splitMarkdownBlocks(markdown) {
+  const text = String(markdown);
+  const fmMatch = text.match(/^---\n[\s\S]*?\n---\n+/);
+  const frontMatter = fmMatch ? fmMatch[0] : "";
+  const body = text.slice(frontMatter.length);
+
+  const blocks = [];
+  let current = [];
+  let inFence = false;
+  for (const line of body.split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
+    if (!inFence && line.trim() === "") {
+      if (current.length) blocks.push(current.join("\n"));
+      current = [];
+    } else {
+      current.push(line);
+    }
+  }
+  if (current.length) blocks.push(current.join("\n"));
+  return { frontMatter, blocks };
+}
+
+// Parse a model reply like "2, 5" / "none" / bulleted lines into unique,
+// in-range block indexes. Tolerates prose around the numbers.
+function parseBlockNumbers(text, count) {
+  const str = String(text || "");
+  if (/^\s*none\b/i.test(str)) return [];
+  // "0 blocks" / "0 boilerplate" is a verbal "none", not a flag on block 0.
+  if (/\b0\s+(blocks?|boilerplate)\b/i.test(str)) return [];
+  const seen = new Set();
+  for (const m of str.match(/\d+/g) || []) {
+    const n = Number(m);
+    if (n >= 0 && n < count) seen.add(n);
+  }
+  return [...seen];
+}
+
+// Above this fraction of dropped characters, a cleanup verdict is judged
+// over-aggressive (the model probably misread the page) and is discarded.
+const CLEANUP_MAX_DROP_RATIO = 0.4;
+
+// Remove the blocks the model flagged as boilerplate — conservatively.
+// Blocks containing a code fence are never dropped (a fence can sit mid-block
+// when the page had no blank line before it), and if the flagged blocks add
+// up to more than CLEANUP_MAX_DROP_RATIO of the document, the whole verdict
+// is rejected with { rejected: true } so the UI can say so.
+function dropBoilerplateBlocks(blocks, dropIndexes) {
+  const drop = new Set(
+    (dropIndexes || []).filter(
+      (i) => blocks[i] != null && !/(^|\n)\s*(```|~~~)/.test(blocks[i])
+    )
+  );
+  if (!drop.size) return { kept: blocks, dropped: 0 };
+  const totalChars = blocks.reduce((sum, b) => sum + b.length, 0);
+  const droppedChars = [...drop].reduce((sum, i) => sum + blocks[i].length, 0);
+  if (totalChars && droppedChars / totalChars > CLEANUP_MAX_DROP_RATIO) {
+    return { kept: blocks, dropped: 0, rejected: true };
+  }
+  return { kept: blocks.filter((_, i) => !drop.has(i)), dropped: drop.size };
+}
+
 // The user's optional webhook URL (empty string when unset).
 async function getWebhookUrl() {
   try {

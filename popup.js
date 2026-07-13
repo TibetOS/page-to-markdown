@@ -16,6 +16,7 @@ const downloadEditedBtn = document.getElementById("downloadEdited");
 const copyEditedBtn = document.getElementById("copyEdited");
 const copyAIEditedBtn = document.getElementById("copyAIEdited");
 const translateBtn = document.getElementById("translate");
+const cleanupBtn = document.getElementById("cleanup");
 const backBtn = document.getElementById("back");
 
 // Original labels, so we can restore them after a busy state.
@@ -30,6 +31,7 @@ const labels = new Map([
   [copyEditedBtn, "📋 Copy"],
   [copyAIEditedBtn, "✨ Copy for AI"],
   [translateBtn, "🌐 Translate"],
+  [cleanupBtn, "🧹 Clean up"],
 ]);
 const allButtons = [...labels.keys(), backBtn];
 
@@ -301,6 +303,7 @@ previewBtn.addEventListener("click", async () => {
     current = { title: result.title || "page", url: result.url || "", lang: result.meta?.lang || "" };
     editor.value = await buildOutput(result);
     translateBtn.hidden = !(await getTranslateTarget()) || typeof Translator === "undefined";
+    cleanupBtn.hidden = !(await getAiCleanupEnabled()) || typeof LanguageModel === "undefined";
     showPreview();
   } catch (err) {
     showError(err);
@@ -326,6 +329,8 @@ settingsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
 // the (small) language pack, with progress shown in the status line.
 translateBtn.addEventListener("click", async () => {
   setBusy(true, translateBtn, "Translating...");
+  // Freeze the editor: edits typed mid-translation would be overwritten below.
+  editor.disabled = true;
   try {
     const target = await getTranslateTarget();
     if (!target) throw new Error("Set a target language in settings first.");
@@ -354,6 +359,68 @@ translateBtn.addEventListener("click", async () => {
   } catch (err) {
     showError(err);
   } finally {
+    editor.disabled = false;
+    setBusy(false);
+  }
+});
+
+// 🧹 Remove leftover boilerplate from the preview using the on-device Prompt
+// API. The model only flags blocks (nav menus, cookie banners, footer junk);
+// flagged blocks are dropped verbatim — content is never rewritten. Requires
+// the model to already be installed (download lives in settings, like the
+// other AI features).
+cleanupBtn.addEventListener("click", async () => {
+  setBusy(true, cleanupBtn, "Cleaning...");
+  // Freeze the editor: edits typed mid-cleanup would be overwritten below.
+  editor.disabled = true;
+  try {
+    if (typeof LanguageModel === "undefined") throw new Error("On-device AI isn't supported by this browser.");
+    if ((await LanguageModel.availability()) !== "available") {
+      throw new Error("Model not installed — use the Download model button in settings.");
+    }
+
+    const { frontMatter, blocks } = splitMarkdownBlocks(editor.value);
+    if (blocks.length < 2) throw new Error("Nothing to clean — the page has too little content.");
+
+    const session = await LanguageModel.create({
+      initialPrompts: [
+        {
+          role: "system",
+          content:
+            "You spot boilerplate in web articles converted to Markdown. Given numbered blocks from one article, reply with only the numbers of blocks that are navigation menus, cookie or consent notices, ads, newsletter/subscription prompts, share or social buttons, related-article lists, comment-section chrome, or footer junk — comma-separated. Reply with the word none if every block is real content. Never flag the article's own text, headings, quotes, or data.",
+        },
+      ],
+    });
+    const dropIndexes = [];
+    try {
+      // Classify in batches of numbered snippets so the prompt stays small.
+      const BATCH = 24;
+      for (let start = 0; start < blocks.length; start += BATCH) {
+        const batch = blocks.slice(start, start + BATCH);
+        const listing = batch
+          .map((b, i) => `[${i}] ${b.replace(/\s+/g, " ").trim().slice(0, 200)}`)
+          .join("\n");
+        const reply = await session.prompt(`Blocks:\n${listing}\n\nBoilerplate block numbers:`);
+        for (const n of parseBlockNumbers(reply, batch.length)) dropIndexes.push(start + n);
+      }
+    } finally {
+      session.destroy?.();
+    }
+
+    const { kept, dropped, rejected } = dropBoilerplateBlocks(blocks, dropIndexes);
+    if (rejected) {
+      showError(new Error("Cleanup skipped — the model flagged too much of the page to be trusted."));
+    } else if (!dropped) {
+      showSuccess("No boilerplate found — the page already looks clean.");
+    } else {
+      editor.value = frontMatter + kept.join("\n\n") + "\n";
+      updateMeta();
+      showSuccess(`Removed ${dropped} boilerplate block${dropped === 1 ? "" : "s"}.`);
+    }
+  } catch (err) {
+    showError(err);
+  } finally {
+    editor.disabled = false;
     setBusy(false);
   }
 });
