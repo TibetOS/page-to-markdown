@@ -22,6 +22,7 @@ const saveWebhookBtn = document.getElementById("saveWebhook");
 const webhookStatusEl = document.getElementById("webhookStatus");
 const aiSummaryEl = document.getElementById("aiSummary");
 const aiTagsEl = document.getElementById("aiTags");
+const aiCleanupEl = document.getElementById("aiCleanup");
 const templatesEl = document.getElementById("templates");
 const addTemplateBtn = document.getElementById("addTemplate");
 const translateTargetEl = document.getElementById("translateTarget");
@@ -165,6 +166,11 @@ aiTagsEl.addEventListener("change", async () => {
   flashSaved();
 });
 
+aiCleanupEl.addEventListener("change", async () => {
+  await chrome.storage.sync.set({ aiCleanup: aiCleanupEl.checked });
+  flashSaved();
+});
+
 translateTargetEl.addEventListener("change", async () => {
   const value = translateTargetEl.value.trim().toLowerCase();
   translateTargetEl.value = value;
@@ -225,6 +231,7 @@ downloadModelBtn.addEventListener("click", async () => {
   webhookEl.value = await getWebhookUrl();
   aiSummaryEl.checked = await getAiSummaryEnabled();
   aiTagsEl.checked = await getAiTagsEnabled();
+  aiCleanupEl.checked = await getAiCleanupEnabled();
   for (const tpl of await getTemplates()) templatesEl.append(templateRow(tpl));
   translateTargetEl.value = await getTranslateTarget();
   refreshAiStatus();

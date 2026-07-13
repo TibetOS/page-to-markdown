@@ -81,6 +81,7 @@ The clips directory defaults to `~/Downloads`; override with `--dir <path>` or t
 - **Webhook destination** — pipe extractions into n8n / Zapier / Make / your own service; access is granted per-site, only when you save a URL
 - **On-device AI summary & tags (opt-in)** — a TL;DR field and 3–6 topic tags via Chrome's built-in Gemini Nano; fully local, feature-detected, and the model is only ever downloaded from an explicit button in settings
 - **On-device translation (opt-in)** — translate the preview's prose with Chrome's built-in Translator while code blocks, links, and front matter stay untouched
+- **On-device boilerplate cleanup (opt-in)** — a 🧹 Clean up button in the preview asks the local model to flag leftover menus, cookie banners, and footer junk; flagged blocks are removed verbatim, never rewritten, and over-aggressive verdicts are rejected
 - **Math survives** — KaTeX/MathML formulas come out as `$…$` / `$$…$$` LaTeX (recovered from the embedded TeX annotations), not rendered-glyph soup
 - **MCP bridge** — a zero-dependency local server that lets Claude / Cursor / any MCP client list, read, and search your clips as context
 - **Image dedup** — handles lazy-loading markup that creates duplicate `<img>` tags
@@ -133,8 +134,9 @@ If you configure a **webhook**, the browser asks you to grant access to *that on
 - **v1.14** — Defuddle extraction engine (site-specific extractors, Readability fallback) ✅
 
 - **v1.15** — MCP bridge: expose clips to local AI agents (`mcp/server.mjs`) ✅
+- **v1.16** — Opt-in on-device AI cleanup: flag & remove leftover boilerplate in the preview ✅
 
-That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered, plus the first exploratory-tier item. Still under evaluation: batch/multi-tab capture, local annotation library.
+That's the full roadmap from [`ROADMAP.md`](ROADMAP.md) (the market & technology intelligence analysis) delivered, plus the first exploratory-tier item. Still under evaluation: batch/multi-tab capture, local annotation library, WebLLM fallback for browsers without built-in AI.
 
 ## License
 

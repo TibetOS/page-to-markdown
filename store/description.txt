@@ -19,7 +19,7 @@ BUILT FOR AI WORKFLOWS
 Markdown is the native language of LLM context. "Copy for AI" gives you token-lean output with a source line and a token estimate, so you know the context cost before you paste.
 
 ON-DEVICE AI (OPT-IN)
-With Chrome's built-in Gemini Nano, Page to Markdown can add a TL;DR summary and 3–6 topic tags to your front matter — computed entirely on your device. Off by default, feature-detected, and the model is only ever downloaded when you press the download button in settings. No cloud AI, ever.
+With Chrome's built-in Gemini Nano, Page to Markdown can add a TL;DR summary and 3–6 topic tags to your front matter, and clean up hard pages — a 🧹 button in the preview flags leftover menus, cookie banners, and footer junk, and removes them without ever rewriting your content. All of it computed entirely on your device: off by default, feature-detected, and the model is only ever downloaded when you press the download button in settings. No cloud AI, ever.
 
 TECHNICAL CONTENT DONE RIGHT
 • Fenced code blocks with language tags
