@@ -338,9 +338,12 @@ function splitMarkdownBlocks(markdown) {
 // Parse a model reply like "2, 5" / "none" / bulleted lines into unique,
 // in-range block indexes. Tolerates prose around the numbers.
 function parseBlockNumbers(text, count) {
-  if (/^\s*none\b/i.test(String(text || ""))) return [];
+  const str = String(text || "");
+  if (/^\s*none\b/i.test(str)) return [];
+  // "0 blocks" / "0 boilerplate" is a verbal "none", not a flag on block 0.
+  if (/\b0\s+(blocks?|boilerplate)\b/i.test(str)) return [];
   const seen = new Set();
-  for (const m of String(text || "").match(/\d+/g) || []) {
+  for (const m of str.match(/\d+/g) || []) {
     const n = Number(m);
     if (n >= 0 && n < count) seen.add(n);
   }
@@ -352,19 +355,21 @@ function parseBlockNumbers(text, count) {
 const CLEANUP_MAX_DROP_RATIO = 0.4;
 
 // Remove the blocks the model flagged as boilerplate — conservatively.
-// Fenced code blocks are never dropped, and if the flagged blocks add up to
-// more than CLEANUP_MAX_DROP_RATIO of the document, the whole verdict is
-// rejected. Returns { kept, dropped }.
+// Blocks containing a code fence are never dropped (a fence can sit mid-block
+// when the page had no blank line before it), and if the flagged blocks add
+// up to more than CLEANUP_MAX_DROP_RATIO of the document, the whole verdict
+// is rejected with { rejected: true } so the UI can say so.
 function dropBoilerplateBlocks(blocks, dropIndexes) {
   const drop = new Set(
     (dropIndexes || []).filter(
-      (i) => blocks[i] != null && !/^\s*(```|~~~)/.test(blocks[i])
+      (i) => blocks[i] != null && !/(^|\n)\s*(```|~~~)/.test(blocks[i])
     )
   );
+  if (!drop.size) return { kept: blocks, dropped: 0 };
   const totalChars = blocks.reduce((sum, b) => sum + b.length, 0);
   const droppedChars = [...drop].reduce((sum, i) => sum + blocks[i].length, 0);
-  if (!drop.size || (totalChars && droppedChars / totalChars > CLEANUP_MAX_DROP_RATIO)) {
-    return { kept: blocks, dropped: 0 };
+  if (totalChars && droppedChars / totalChars > CLEANUP_MAX_DROP_RATIO) {
+    return { kept: blocks, dropped: 0, rejected: true };
   }
   return { kept: blocks.filter((_, i) => !drop.has(i)), dropped: drop.size };
 }

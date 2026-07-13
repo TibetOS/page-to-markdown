@@ -329,6 +329,8 @@ settingsBtn.addEventListener("click", () => chrome.runtime.openOptionsPage());
 // the (small) language pack, with progress shown in the status line.
 translateBtn.addEventListener("click", async () => {
   setBusy(true, translateBtn, "Translating...");
+  // Freeze the editor: edits typed mid-translation would be overwritten below.
+  editor.disabled = true;
   try {
     const target = await getTranslateTarget();
     if (!target) throw new Error("Set a target language in settings first.");
@@ -357,6 +359,7 @@ translateBtn.addEventListener("click", async () => {
   } catch (err) {
     showError(err);
   } finally {
+    editor.disabled = false;
     setBusy(false);
   }
 });
@@ -368,6 +371,8 @@ translateBtn.addEventListener("click", async () => {
 // other AI features).
 cleanupBtn.addEventListener("click", async () => {
   setBusy(true, cleanupBtn, "Cleaning...");
+  // Freeze the editor: edits typed mid-cleanup would be overwritten below.
+  editor.disabled = true;
   try {
     if (typeof LanguageModel === "undefined") throw new Error("On-device AI isn't supported by this browser.");
     if ((await LanguageModel.availability()) !== "available") {
@@ -402,8 +407,10 @@ cleanupBtn.addEventListener("click", async () => {
       session.destroy?.();
     }
 
-    const { kept, dropped } = dropBoilerplateBlocks(blocks, dropIndexes);
-    if (!dropped) {
+    const { kept, dropped, rejected } = dropBoilerplateBlocks(blocks, dropIndexes);
+    if (rejected) {
+      showError(new Error("Cleanup skipped — the model flagged too much of the page to be trusted."));
+    } else if (!dropped) {
       showSuccess("No boilerplate found — the page already looks clean.");
     } else {
       editor.value = frontMatter + kept.join("\n\n") + "\n";
@@ -413,6 +420,7 @@ cleanupBtn.addEventListener("click", async () => {
   } catch (err) {
     showError(err);
   } finally {
+    editor.disabled = false;
     setBusy(false);
   }
 });
