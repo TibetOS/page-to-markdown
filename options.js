@@ -17,6 +17,8 @@ const DESCRIPTIONS = {
 const fieldsEl = document.getElementById("fields");
 const savedEl = document.getElementById("saved");
 const vaultEl = document.getElementById("vault");
+const obsidianFolderEl = document.getElementById("obsidianFolder");
+const obsidianDailyEl = document.getElementById("obsidianDaily");
 const webhookEl = document.getElementById("webhook");
 const saveWebhookBtn = document.getElementById("saveWebhook");
 const webhookStatusEl = document.getElementById("webhookStatus");
@@ -56,13 +58,20 @@ async function save() {
   for (const key of FRONT_MATTER_FIELDS) {
     frontMatterFields[key] = document.getElementById(`f-${key}`).checked;
   }
-  await chrome.storage.sync.set({ frontMatterFields, obsidianVault: vaultEl.value.trim() });
+  await chrome.storage.sync.set({
+    frontMatterFields,
+    obsidianVault: vaultEl.value.trim(),
+    obsidianFolder: obsidianFolderEl.value.trim(),
+    obsidianDaily: obsidianDailyEl.checked,
+  });
   savedEl.textContent = "Saved ✓";
   clearTimeout(save._t);
   save._t = setTimeout(() => (savedEl.textContent = ""), 1500);
 }
 
 vaultEl.addEventListener("change", save);
+obsidianFolderEl.addEventListener("change", save);
+obsidianDailyEl.addEventListener("change", save);
 
 // Saving the webhook needs its own button: chrome.permissions.request must run
 // inside a user gesture, and we only ask for the webhook's own origin.
@@ -227,7 +236,10 @@ downloadModelBtn.addEventListener("click", async () => {
 
 (async () => {
   render(await getEnabledFields());
-  vaultEl.value = await getObsidianVault();
+  const obsidian = await getObsidianSettings();
+  vaultEl.value = obsidian.vault;
+  obsidianFolderEl.value = obsidian.folder;
+  obsidianDailyEl.checked = obsidian.daily;
   webhookEl.value = await getWebhookUrl();
   aiSummaryEl.checked = await getAiSummaryEnabled();
   aiTagsEl.checked = await getAiTagsEnabled();

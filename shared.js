@@ -350,21 +350,44 @@ const OBSIDIAN_URI_LIMIT = 30000;
 
 // Build an obsidian://new URI that creates a note with the given content.
 // vault is optional — Obsidian uses the last-focused vault when it's omitted.
-function buildObsidianUri(title, content, vault) {
+// folder (optional) files the note under a vault-relative path via the
+// "file" parameter instead of "name".
+function buildObsidianUri(title, content, vault, folder) {
   const params = new URLSearchParams();
   if (vault) params.set("vault", vault);
-  params.set("name", (title || "page").slice(0, 120));
+  const name = (title || "page").slice(0, 120);
+  const dir = (folder || "").trim().replace(/^\/+|\/+$/g, "");
+  if (dir) params.set("file", `${dir}/${name}`);
+  else params.set("name", name);
   params.set("content", content);
   return `obsidian://new?${params.toString()}`;
 }
 
-// The user's optional default Obsidian vault name.
-async function getObsidianVault() {
+// Build a URI that appends the content to today's daily note. Uses the
+// community "Advanced URI" plugin's scheme — core obsidian:// has no
+// daily-note action — so it requires that plugin in the target vault.
+function buildObsidianDailyUri(content, vault) {
+  const params = new URLSearchParams();
+  if (vault) params.set("vault", vault);
+  params.set("daily", "true");
+  params.set("data", content);
+  params.set("mode", "append");
+  return `obsidian://adv-uri?${params.toString()}`;
+}
+
+// The user's Obsidian destination settings: optional default vault name,
+// optional folder for new notes, and whether Send to Obsidian should append
+// to today's daily note instead of creating a note.
+async function getObsidianSettings() {
   try {
-    const stored = await chrome.storage.sync.get("obsidianVault");
-    return (stored.obsidianVault || "").trim();
+    const stored = await chrome.storage.sync.get(["obsidianVault", "obsidianFolder", "obsidianDaily"]);
+    return {
+      vault: (stored.obsidianVault || "").trim(),
+      folder: (stored.obsidianFolder || "").trim(),
+      daily: stored.obsidianDaily === true,
+    };
   } catch {
-    return "";
+    return { vault: "", folder: "", daily: false };
   }
 }
 

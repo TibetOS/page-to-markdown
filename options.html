@@ -62,6 +62,21 @@
           style="margin-top: 6px; width: 100%; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
       </label>
     </div>
+    <div class="field">
+      <label for="obsidianFolder" style="flex: 1;">
+        <div class="name">Folder for new notes</div>
+        <div class="desc">Optional. Files clipped notes under this vault-relative folder (e.g. <code>Clippings/Web</code>). Leave blank for the vault root.</div>
+        <input type="text" id="obsidianFolder" placeholder="Clippings"
+          style="margin-top: 6px; width: 100%; padding: 8px 10px; border: 1px solid #333; border-radius: 6px; background: #0f0f1e; color: #e0e0e0; font-size: 13px;">
+      </label>
+    </div>
+    <div class="field">
+      <input type="checkbox" id="obsidianDaily">
+      <label for="obsidianDaily">
+        <div class="name">Append to today's daily note instead</div>
+        <div class="desc"><strong>Send to Obsidian</strong> appends the clip to today's daily note rather than creating a new note. Requires the community <strong>Advanced URI</strong> plugin in your vault.</div>
+      </label>
+    </div>
   </fieldset>
 
   <fieldset style="margin-top: 18px;">

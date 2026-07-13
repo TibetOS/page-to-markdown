@@ -122,7 +122,10 @@ async function downloadPage(tab) {
 async function sendToObsidian(tab) {
   const result = await extractArticle(tab.id);
   const markdown = await buildOutput(result);
-  const uri = buildObsidianUri(result.title, markdown, await getObsidianVault());
+  const { vault, folder, daily } = await getObsidianSettings();
+  const uri = daily
+    ? buildObsidianDailyUri(markdown, vault)
+    : buildObsidianUri(result.title, markdown, vault, folder);
   if (uri.length > OBSIDIAN_URI_LIMIT) {
     // Too large for the obsidian:// protocol handler — hand off via clipboard.
     const ok = await runInPage(tab.id, copyTextInPage, [markdown]);
