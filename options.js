@@ -1,18 +1,8 @@
 // Options page: toggle which front-matter fields are emitted. Settings live in
 // chrome.storage.sync and are read back by shared.js#getEnabledFields.
 
-const DESCRIPTIONS = {
-  title: "The article title.",
-  author: "Byline / author, when detected.",
-  source: "The page URL the content came from.",
-  site: "Site or publication name.",
-  published: "Original publish date, when available.",
-  lang: "Content language (e.g. en, he).",
-  excerpt: "A short summary/description of the page.",
-  summary: "On-device AI TL;DR (only when enabled below and the model is installed).",
-  tags: "On-device AI topic tags (only when enabled below and the model is installed).",
-  extracted: "Timestamp of when you extracted it.",
-};
+// Localize static UI (dynamic strings below go through t()).
+applyI18n();
 
 const fieldsEl = document.getElementById("fields");
 const savedEl = document.getElementById("saved");
@@ -46,7 +36,9 @@ function render(enabled) {
     const label = document.createElement("label");
     label.htmlFor = `f-${key}`;
     label.innerHTML = `<div class="name">${key}</div><div class="desc"></div>`;
-    label.querySelector(".desc").textContent = DESCRIPTIONS[key] || "";
+    // Field names are the literal YAML keys (never localized); only the
+    // explanations are.
+    label.querySelector(".desc").textContent = t(`fdesc_${key}`);
 
     row.append(input, label);
     fieldsEl.append(row);
@@ -64,7 +56,7 @@ async function save() {
     obsidianFolder: obsidianFolderEl.value.trim(),
     obsidianDaily: obsidianDailyEl.checked,
   });
-  savedEl.textContent = "Saved ✓";
+  savedEl.textContent = t("savedFlash");
   clearTimeout(save._t);
   save._t = setTimeout(() => (savedEl.textContent = ""), 1500);
 }
@@ -79,26 +71,26 @@ saveWebhookBtn.addEventListener("click", async () => {
   const raw = webhookEl.value;
   if (!raw.trim()) {
     await chrome.storage.sync.set({ webhookUrl: "" });
-    webhookStatusEl.textContent = "Webhook cleared.";
+    webhookStatusEl.textContent = t("whCleared");
     return;
   }
   const normalized = normalizeWebhookUrl(raw);
   if (!normalized) {
-    webhookStatusEl.textContent = "Invalid URL — must be https:// (or http://localhost).";
+    webhookStatusEl.textContent = t("whInvalid");
     return;
   }
   const origin = new URL(normalized).origin + "/*";
   try {
     const granted = await chrome.permissions.request({ origins: [origin] });
     if (!granted) {
-      webhookStatusEl.textContent = "Permission declined — webhook not saved.";
+      webhookStatusEl.textContent = t("whDenied");
       return;
     }
     await chrome.storage.sync.set({ webhookUrl: normalized });
     webhookEl.value = normalized;
-    webhookStatusEl.textContent = "Saved ✓ — access granted for " + new URL(normalized).origin;
+    webhookStatusEl.textContent = t("whSaved", new URL(normalized).origin);
   } catch (err) {
-    webhookStatusEl.textContent = "Couldn't save: " + err.message;
+    webhookStatusEl.textContent = t("whFailed", err.message);
   }
 });
 
@@ -111,12 +103,12 @@ function templateRow(tpl = { pattern: "", template: "" }) {
   const pattern = document.createElement("input");
   pattern.type = "text";
   pattern.className = "tpl-pattern";
-  pattern.placeholder = "example.com or *";
+  pattern.placeholder = t("phPattern");
   pattern.value = tpl.pattern || "";
 
   const remove = document.createElement("button");
   remove.className = "tpl-remove";
-  remove.textContent = "Remove";
+  remove.textContent = t("btnRemove");
   remove.addEventListener("click", () => {
     row.remove();
     saveTemplates();
@@ -153,7 +145,7 @@ addTemplateBtn.addEventListener("click", () => {
 // --- On-device AI (Gemini Nano) ---
 
 function flashSaved() {
-  savedEl.textContent = "Saved ✓";
+  savedEl.textContent = t("savedFlash");
   // Share save._t so rapid toggles across settings don't race the indicator.
   clearTimeout(save._t);
   save._t = setTimeout(() => (savedEl.textContent = ""), 1500);
@@ -184,30 +176,30 @@ translateTargetEl.addEventListener("change", async () => {
 async function refreshAiStatus() {
   downloadModelBtn.hidden = true;
   if (typeof Summarizer === "undefined") {
-    aiStatusEl.textContent = "Not supported by this browser (needs Chrome 138+ with built-in AI).";
+    aiStatusEl.textContent = t("aiNotSupported");
     return;
   }
   try {
     const availability = await Summarizer.availability();
     if (availability === "available") {
-      aiStatusEl.textContent = "Model installed — summaries are ready. ✓";
+      aiStatusEl.textContent = t("aiReady");
     } else if (availability === "downloading") {
-      aiStatusEl.textContent = "Model is downloading in the background…";
+      aiStatusEl.textContent = t("aiDownloading");
     } else if (availability === "downloadable") {
-      aiStatusEl.textContent = "Model not installed (~a few GB, one-time).";
+      aiStatusEl.textContent = t("aiNotInstalled");
       downloadModelBtn.hidden = false;
     } else {
-      aiStatusEl.textContent = "Unavailable on this device (insufficient storage/GPU).";
+      aiStatusEl.textContent = t("aiUnavailable");
     }
   } catch (err) {
-    aiStatusEl.textContent = "Couldn't check availability: " + err.message;
+    aiStatusEl.textContent = t("aiCheckFailed", err.message);
   }
 }
 
 // Explicit user-gesture download — we never fetch the model implicitly.
 downloadModelBtn.addEventListener("click", async () => {
   downloadModelBtn.disabled = true;
-  aiStatusEl.textContent = "Downloading model… 0%";
+  aiStatusEl.textContent = t("aiDlProgress", "0");
   try {
     const summarizer = await Summarizer.create({
       monitor(m) {
@@ -215,14 +207,14 @@ downloadModelBtn.addEventListener("click", async () => {
           // e.loaded is a 0–1 fraction in some Chrome versions and raw bytes
           // (with e.total set) in others — handle both.
           const percent = e.total ? Math.round((e.loaded / e.total) * 100) : Math.round((e.loaded || 0) * 100);
-          aiStatusEl.textContent = `Downloading model… ${percent}%`;
+          aiStatusEl.textContent = t("aiDlProgress", String(percent));
         });
       },
     });
     summarizer.destroy?.();
     await refreshAiStatus();
   } catch (err) {
-    aiStatusEl.textContent = "Download failed: " + err.message;
+    aiStatusEl.textContent = t("aiDlFailed", err.message);
   } finally {
     downloadModelBtn.disabled = false;
   }

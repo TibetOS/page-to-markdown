@@ -16,13 +16,15 @@ const MENU = {
 };
 
 chrome.runtime.onInstalled.addListener(() => {
+  // Menu titles come from _locales (the root keeps the brand name as-is).
+  const msg = (key) => chrome.i18n.getMessage(key);
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({ id: "p2m", title: "Page to Markdown", contexts: ["page", "selection"] });
-    chrome.contextMenus.create({ id: MENU.download, parentId: "p2m", title: "Download page as Markdown", contexts: ["page"] });
-    chrome.contextMenus.create({ id: MENU.copy, parentId: "p2m", title: "Copy page as Markdown", contexts: ["page"] });
-    chrome.contextMenus.create({ id: MENU.copyAI, parentId: "p2m", title: "Copy page for AI", contexts: ["page"] });
-    chrome.contextMenus.create({ id: MENU.obsidian, parentId: "p2m", title: "Send page to Obsidian", contexts: ["page"] });
-    chrome.contextMenus.create({ id: MENU.copySelection, parentId: "p2m", title: "Copy selection as Markdown", contexts: ["selection"] });
+    chrome.contextMenus.create({ id: MENU.download, parentId: "p2m", title: msg("menuDownload"), contexts: ["page"] });
+    chrome.contextMenus.create({ id: MENU.copy, parentId: "p2m", title: msg("menuCopy"), contexts: ["page"] });
+    chrome.contextMenus.create({ id: MENU.copyAI, parentId: "p2m", title: msg("menuCopyAI"), contexts: ["page"] });
+    chrome.contextMenus.create({ id: MENU.obsidian, parentId: "p2m", title: msg("menuObsidian"), contexts: ["page"] });
+    chrome.contextMenus.create({ id: MENU.copySelection, parentId: "p2m", title: msg("menuCopySelection"), contexts: ["selection"] });
   });
 });
 
