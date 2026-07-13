@@ -4,6 +4,7 @@
   "version": "1.16.0",
   "description": "One-click extraction of any page's content as a clean .md file",
   "permissions": ["activeTab", "scripting", "contextMenus", "storage"],
+  "optional_permissions": ["tabs"],
   "optional_host_permissions": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
   "background": {
     "service_worker": "background.js"

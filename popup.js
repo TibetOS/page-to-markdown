@@ -7,6 +7,7 @@ const copyBtn = document.getElementById("copy");
 const copyAIBtn = document.getElementById("copyAI");
 const obsidianBtn = document.getElementById("obsidian");
 const webhookBtn = document.getElementById("webhook");
+const batchBtn = document.getElementById("batch");
 const previewBtn = document.getElementById("preview-btn");
 const settingsBtn = document.getElementById("settings");
 
@@ -26,6 +27,7 @@ const labels = new Map([
   [copyAIBtn, "✨ Copy for AI"],
   [obsidianBtn, "🟣 Send to Obsidian"],
   [webhookBtn, "📤 Send to webhook"],
+  [batchBtn, "🗂 Clip all tabs"],
   [previewBtn, "👁 Preview & edit"],
   [downloadEditedBtn, "⬇ Download"],
   [copyEditedBtn, "📋 Copy"],
@@ -38,21 +40,27 @@ const allButtons = [...labels.keys(), backBtn];
 // Metadata from the most recent extraction, used by the preview actions.
 let current = { title: "page", url: "" };
 
-// Run Readability + Turndown in the active tab and return { markdown, title, url }.
-async function extract() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab?.id) throw new Error("No active tab found.");
+// The extraction pipeline injected into a tab, in dependency order.
+const EXTRACT_FILES = ["lib/defuddle.js", "lib/Readability.js", "lib/turndown.js", "content.js"];
 
+// Run the extraction pipeline in one tab; throws when nothing extractable.
+async function extractFromTab(tab) {
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: ["lib/defuddle.js", "lib/Readability.js", "lib/turndown.js", "content.js"],
+    files: EXTRACT_FILES,
   });
-
   const result = results?.[results.length - 1]?.result;
   if (!result?.success) {
     throw new Error(result?.error || "Extraction failed — page may not have article content.");
   }
   return { ...result, url: tab.url };
+}
+
+// Run Readability + Turndown in the active tab and return { markdown, title, url }.
+async function extract() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab?.id) throw new Error("No active tab found.");
+  return extractFromTab(tab);
 }
 
 // toFilename / stripFrontMatter / stripImages / estimateTokens / buildLeanMarkdown
@@ -169,8 +177,8 @@ function showSuccess(msg) {
   status.className = "success";
 }
 
-function downloadMarkdown(markdown, filename) {
-  const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+function downloadFile(content, filename, type = "text/markdown;charset=utf-8") {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -187,7 +195,7 @@ downloadBtn.addEventListener("click", async () => {
     const result = await extractWithExtras();
     const markdown = await buildOutput(result);
     const filename = toFilename(result.title);
-    downloadMarkdown(markdown, filename);
+    downloadFile(markdown, filename);
     showSuccess(`Downloaded: ${filename}`);
   } catch (err) {
     showError(err);
@@ -264,6 +272,58 @@ webhookBtn.addEventListener("click", async () => {
       meta: result.meta,
     });
     showSuccess("Sent to webhook.");
+  } catch (err) {
+    showError(err);
+  } finally {
+    setBusy(false);
+  }
+});
+
+// 🗂 Clip every clippable tab in the current window into one combined file.
+// Needs "tabs" (to enumerate tabs) plus broad https host access (to inject
+// the extraction pipeline into background tabs, where activeTab can't reach) —
+// both declared optional in the manifest and requested only here, inside the
+// click gesture, so the default install keeps its minimal-permission story.
+batchBtn.addEventListener("click", async () => {
+  setBusy(true, batchBtn, "Clipping tabs...");
+  try {
+    const granted = await chrome.permissions.request({
+      permissions: ["tabs"],
+      origins: ["https://*/*"],
+    });
+    if (!granted) throw new Error("Permission declined — can't read the window's tabs without it.");
+
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    const clippable = tabs.filter((t) => /^https:/i.test(t.url || ""));
+    if (!clippable.length) throw new Error("No clippable tabs — only regular https pages can be clipped.");
+
+    // Sequential on purpose: one extraction at a time keeps memory sane on
+    // big windows, and lets the status line show real progress.
+    const docs = [];
+    const skipped = [];
+    for (let i = 0; i < clippable.length; i++) {
+      status.textContent = `Clipping tab ${i + 1} of ${clippable.length}…`;
+      try {
+        const result = await extractFromTab(clippable[i]);
+        docs.push(await buildOutput(result));
+      } catch {
+        // Discarded/unloaded tabs and pages with no article land here.
+        skipped.push(clippable[i].title || clippable[i].url);
+      }
+    }
+    if (!docs.length) throw new Error("Couldn't extract an article from any open tab.");
+
+    let combined = docs.join("\n\n---\n\n");
+    if (skipped.length) {
+      combined += `\n\n---\n\n> Skipped ${skipped.length} tab${skipped.length === 1 ? "" : "s"}: ${skipped.join("; ")}\n`;
+    }
+    const filename = toFilename(`tabs ${new Date().toISOString().slice(0, 10)}`);
+    downloadFile(combined, filename);
+    showSuccess(
+      skipped.length
+        ? `Downloaded ${docs.length} tabs (${skipped.length} skipped): ${filename}`
+        : `Downloaded ${docs.length} tabs: ${filename}`
+    );
   } catch (err) {
     showError(err);
   } finally {
@@ -429,7 +489,7 @@ cleanupBtn.addEventListener("click", async () => {
 
 downloadEditedBtn.addEventListener("click", () => {
   const filename = toFilename(current.title);
-  downloadMarkdown(editor.value, filename);
+  downloadFile(editor.value, filename);
   showSuccess(`Downloaded: ${filename}`);
 });
 
