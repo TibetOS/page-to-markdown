@@ -154,16 +154,23 @@ function buildRagJsonl(chunks, meta) {
 
 // --- Markdown tables → CSV ---
 
-// Split one Markdown table row into cell strings ("\|" escapes a literal pipe).
+// Split one Markdown table row into cell strings. "\|" escapes a literal
+// pipe and "\\" an escaped backslash, so "\\|" is a backslash followed by a
+// cell separator.
 function splitTableRow(line) {
   const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
   const cells = [];
   let cell = "";
   for (let i = 0; i < trimmed.length; i++) {
     const ch = trimmed[i];
-    if (ch === "\\" && trimmed[i + 1] === "|") {
-      cell += "|";
-      i++;
+    if (ch === "\\") {
+      const next = trimmed[i + 1];
+      if (next === "\\" || next === "|") {
+        cell += next;
+        i++;
+      } else {
+        cell += ch;
+      }
     } else if (ch === "|") {
       cells.push(cell.trim());
       cell = "";
@@ -182,16 +189,19 @@ function csvCell(value) {
 }
 
 // Find GitHub-style tables (header row, |---| separator row, body rows) in a
-// Markdown document, ignoring anything inside code fences. Returns one CSV
-// string per table; cells keep their inline Markdown as-is.
+// Markdown document, ignoring anything inside code fences. GFM makes leading/
+// trailing pipes optional, so a run is any streak of lines containing an
+// unescaped pipe; the table proper starts at the row above the first
+// dashes/colons separator row (pipe-containing prose before it is skipped).
+// Returns one CSV string per table; cells keep their inline Markdown as-is.
 function markdownTablesToCsv(markdown) {
   const tables = [];
   let run = [];
   let inFence = false;
   const flushRun = () => {
-    // A real table needs a header plus a separator row of dashes/colons/pipes.
-    if (run.length >= 2 && /^[\s:|-]+$/.test(run[1]) && run[1].includes("-")) {
-      const rows = run.filter((_, i) => i !== 1).map(splitTableRow);
+    const sep = run.findIndex((l, i) => i >= 1 && /^[\s:|-]+$/.test(l) && l.includes("-"));
+    if (sep >= 1) {
+      const rows = [run[sep - 1], ...run.slice(sep + 1)].map(splitTableRow);
       tables.push(rows.map((r) => r.map(csvCell).join(",")).join("\n") + "\n");
     }
     run = [];
@@ -202,7 +212,7 @@ function markdownTablesToCsv(markdown) {
       flushRun();
       continue;
     }
-    if (!inFence && /^\s*\|/.test(line)) run.push(line);
+    if (!inFence && /(?<!\\)\|/.test(line)) run.push(line);
     else flushRun();
   }
   flushRun();
