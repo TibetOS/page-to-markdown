@@ -18,6 +18,9 @@ const copyEditedBtn = document.getElementById("copyEdited");
 const copyAIEditedBtn = document.getElementById("copyAIEdited");
 const translateBtn = document.getElementById("translate");
 const cleanupBtn = document.getElementById("cleanup");
+const ragBtn = document.getElementById("rag");
+const csvBtn = document.getElementById("csv");
+const reportBtn = document.getElementById("report");
 const backBtn = document.getElementById("back");
 
 // Original labels, so we can restore them after a busy state.
@@ -34,8 +37,10 @@ const labels = new Map([
   [copyAIEditedBtn, "✨ Copy for AI"],
   [translateBtn, "🌐 Translate"],
   [cleanupBtn, "🧹 Clean up"],
+  [ragBtn, "🧩 RAG chunks"],
+  [csvBtn, "📊 Tables → CSV"],
 ]);
-const allButtons = [...labels.keys(), backBtn];
+const allButtons = [...labels.keys(), reportBtn, backBtn];
 
 // Metadata from the most recent extraction, used by the preview actions.
 let current = { title: "page", url: "" };
@@ -360,7 +365,12 @@ previewBtn.addEventListener("click", async () => {
   setBusy(true, previewBtn, "Extracting...");
   try {
     const result = await extractWithExtras();
-    current = { title: result.title || "page", url: result.url || "", lang: result.meta?.lang || "" };
+    current = {
+      title: result.title || "page",
+      url: result.url || "",
+      lang: result.meta?.lang || "",
+      engine: result.engine || "",
+    };
     editor.value = await buildOutput(result);
     translateBtn.hidden = !(await getTranslateTarget()) || typeof Translator === "undefined";
     cleanupBtn.hidden = !(await getAiCleanupEnabled()) || typeof LanguageModel === "undefined";
@@ -516,4 +526,55 @@ copyAIEditedBtn.addEventListener("click", async () => {
   } finally {
     setBusy(false);
   }
+});
+
+// 🧩 Download the preview as heading-scoped JSONL chunks for RAG pipelines:
+// one object per line with title, source, heading trail, and token estimate.
+ragBtn.addEventListener("click", () => {
+  try {
+    const chunks = chunkMarkdown(editor.value);
+    if (!chunks.length) throw new Error("Nothing to chunk — the preview is empty.");
+    const jsonl = buildRagJsonl(chunks, { title: current.title, source: current.url });
+    const filename = toFilename(current.title).replace(/\.md$/, ".jsonl");
+    downloadFile(jsonl, filename, "application/jsonl;charset=utf-8");
+    showSuccess(`Downloaded ${chunks.length} chunk${chunks.length === 1 ? "" : "s"}: ${filename}`);
+  } catch (err) {
+    showError(err);
+  }
+});
+
+// 📊 Download every Markdown table in the preview as its own CSV file.
+csvBtn.addEventListener("click", () => {
+  try {
+    const tables = markdownTablesToCsv(editor.value);
+    if (!tables.length) throw new Error("No Markdown tables found in the preview.");
+    const base = toFilename(current.title).replace(/\.md$/, "");
+    tables.forEach((csv, i) => {
+      const suffix = tables.length === 1 ? "" : `-${i + 1}`;
+      downloadFile(csv, `${base}-table${suffix}.csv`, "text/csv;charset=utf-8");
+    });
+    showSuccess(`Downloaded ${tables.length} CSV table${tables.length === 1 ? "" : "s"}.`);
+  } catch (err) {
+    showError(err);
+  }
+});
+
+// 🐞 Open a pre-filled GitHub issue about this page's extraction. Only the
+// page URL, engine, and version numbers are included — never page content.
+reportBtn.addEventListener("click", () => {
+  const params = new URLSearchParams({
+    title: `Bad extraction: ${current.url || current.title}`,
+    body: [
+      `**Page:** ${current.url || "(unknown)"}`,
+      `**Engine used:** ${current.engine || "unknown"}`,
+      `**Extension version:** ${chrome.runtime.getManifest().version}`,
+      `**Browser:** ${navigator.userAgent}`,
+      "",
+      "**What looked wrong?**",
+      "",
+      "<!-- e.g. missing content, leftover junk, broken table/math/code. Nothing from the page is included automatically — paste a snippet only if you're comfortable sharing it. -->",
+    ].join("\n"),
+    labels: "extraction",
+  });
+  chrome.tabs.create({ url: `https://github.com/TibetOS/page-to-markdown/issues/new?${params.toString()}` });
 });

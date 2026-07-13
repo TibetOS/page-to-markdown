@@ -100,6 +100,115 @@ function buildLeanMarkdown(markdown, title, url) {
   return `# ${title || "Untitled"}\nSource: ${url || ""}\n\n${body}`;
 }
 
+// --- RAG chunk export ---
+
+// Split a Markdown body into heading-scoped chunks for RAG ingestion.
+// Front matter and images are stripped; fenced code stays inside its chunk.
+// Each chunk records the heading trail that leads to it (and opens with its
+// own heading line), so embedded chunks keep their document context. Text
+// before the first heading gets an empty trail.
+function chunkMarkdown(markdown) {
+  const lines = stripImages(stripFrontMatter(String(markdown))).split("\n");
+  const chunks = [];
+  const trail = []; // open headings, as { level, text }
+  let current = [];
+  let inFence = false;
+  const flush = () => {
+    const text = current.join("\n").trim();
+    if (text) chunks.push({ heading_path: trail.map((h) => h.text), text });
+    current = [];
+  };
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) inFence = !inFence;
+    const heading = inFence ? null : line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      flush();
+      const level = heading[1].length;
+      while (trail.length && trail[trail.length - 1].level >= level) trail.pop();
+      trail.push({ level, text: heading[2].trim() });
+    }
+    current.push(line);
+  }
+  flush();
+  return chunks;
+}
+
+// Serialize chunks as JSONL for ingestion pipelines: one object per line
+// carrying provenance, the heading trail, and a token estimate.
+function buildRagJsonl(chunks, meta) {
+  return (
+    chunks
+      .map((c, i) =>
+        JSON.stringify({
+          title: meta?.title || "",
+          source: meta?.source || "",
+          heading_path: c.heading_path,
+          chunk: i,
+          tokens: estimateTokens(c.text),
+          text: c.text,
+        })
+      )
+      .join("\n") + "\n"
+  );
+}
+
+// --- Markdown tables → CSV ---
+
+// Split one Markdown table row into cell strings ("\|" escapes a literal pipe).
+function splitTableRow(line) {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  const cells = [];
+  let cell = "";
+  for (let i = 0; i < trimmed.length; i++) {
+    const ch = trimmed[i];
+    if (ch === "\\" && trimmed[i + 1] === "|") {
+      cell += "|";
+      i++;
+    } else if (ch === "|") {
+      cells.push(cell.trim());
+      cell = "";
+    } else {
+      cell += ch;
+    }
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+// Quote a CSV cell per RFC 4180.
+function csvCell(value) {
+  const s = String(value ?? "");
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// Find GitHub-style tables (header row, |---| separator row, body rows) in a
+// Markdown document, ignoring anything inside code fences. Returns one CSV
+// string per table; cells keep their inline Markdown as-is.
+function markdownTablesToCsv(markdown) {
+  const tables = [];
+  let run = [];
+  let inFence = false;
+  const flushRun = () => {
+    // A real table needs a header plus a separator row of dashes/colons/pipes.
+    if (run.length >= 2 && /^[\s:|-]+$/.test(run[1]) && run[1].includes("-")) {
+      const rows = run.filter((_, i) => i !== 1).map(splitTableRow);
+      tables.push(rows.map((r) => r.map(csvCell).join(",")).join("\n") + "\n");
+    }
+    run = [];
+  };
+  for (const line of String(markdown).split("\n")) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      flushRun();
+      continue;
+    }
+    if (!inFence && /^\s*\|/.test(line)) run.push(line);
+    else flushRun();
+  }
+  flushRun();
+  return tables;
+}
+
 // --- On-device translation ---
 
 // The user's target language for the preview Translate action ("" = off).
