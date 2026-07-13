@@ -6,11 +6,15 @@ WHAT YOU CAN DO
 • Extract .md — download the page as a Markdown file with rich YAML front matter
 • Copy Markdown — full Markdown straight to your clipboard, with a token estimate
 • Copy for AI — token-lean Markdown (no front matter, no images) ready to paste into ChatGPT, Claude, or any LLM chat
-• Send to Obsidian — create a note in your vault in one click (obsidian:// URI, optional default vault)
+• Clip all tabs — every open https tab into one combined Markdown file (permissions asked only on first use)
+• RAG chunks — export the page as heading-structured JSONL, ready for embedding pipelines
+• Tables → CSV — download every table on the page as a clean CSV file
+• Send to Obsidian — create a note in your vault in one click (optional default vault and folder, or append to today's daily note)
 • Send to webhook — POST extractions as JSON to your own endpoint (n8n, Zapier, Make, self-hosted)
 • Preview & edit — review and tweak the Markdown before saving, with live word/token counts
 • Copy a selection — highlight text, right-click, get just that part as Markdown
 • Keyboard shortcut & right-click menu — skip the popup entirely (Ctrl/Cmd+Shift+M)
+• English & Hebrew UI — full RTL layout included
 
 RICH, CONFIGURABLE FRONT MATTER
 Each extraction can include title, author, source URL, site, publish date, language, excerpt, and timestamp — every field togglable in settings, and always safely escaped so titles with quotes or colons never break your YAML. Perfect for Obsidian, static site generators, and RAG pipelines.
