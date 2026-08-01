@@ -38,7 +38,7 @@ Edge is Chromium-based, so the same folder loads unmodified.
 Firefox uses a slightly different manifest (event-page background + `browser_specific_settings`); the build script generates it for you. Requires Firefox 127+.
 
 ### From the stores
-Coming soon.
+[**Chrome Web Store**](https://chromewebstore.google.com/detail/page-to-markdown/gkfgacenceooebncggkfcapmnleadjen) — install with one click (Chrome/Edge/Brave). Firefox: coming soon.
 
 ## Building
 
