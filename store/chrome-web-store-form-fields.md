@@ -1,8 +1,8 @@
 # Chrome Web Store — Form Fields to Fill In
 
 Copy-paste each field below into the corresponding spot on the CWS developer dashboard.
-(Current as of v1.11 — clipboard/AI copy, shortcuts & context menu, selection clipping,
-configurable front matter, preview/edit, Obsidian & webhook destinations, opt-in on-device AI.)
+(Current as of v1.17 — adds Defuddle engine, batch tab capture, RAG/CSV export,
+Obsidian folders & daily note, Hebrew UI, MCP bridge.)
 
 ---
 
@@ -20,7 +20,7 @@ configurable front matter, preview/edit, Obsidian & webhook destinations, opt-in
 
 ### Single purpose description
 ```
-Extract the current page's content as clean Markdown — download it, copy it, or send it to the user's own tools (Obsidian, a user-configured webhook).
+Extract web page content as clean Markdown — download it, copy it, or send it to the user's own tools (Obsidian, a user-configured webhook), one page at a time or for all open tabs at once.
 ```
 
 ### Justification for activeTab
@@ -30,7 +30,12 @@ activeTab is used to access the content of the page the user is currently viewin
 
 ### Justification for scripting
 ```
-The scripting permission injects the bundled content script into the active tab to run Readability.js for article extraction and Turndown.js for HTML-to-Markdown conversion. Scripts run only in direct response to a user action (icon click, keyboard shortcut, or context-menu click) and only on the current tab.
+The scripting permission injects the bundled content script into the active tab to run Defuddle (with Readability.js fallback) for article extraction and Turndown.js for HTML-to-Markdown conversion. Scripts run only in direct response to a user action (icon click, keyboard shortcut, or context-menu click) and only on the current tab — or, if the user explicitly runs "Clip all tabs" and grants the optional permissions, on the window's https tabs for that one operation.
+```
+
+### Justification for tabs (optional)
+```
+Declared OPTIONAL and requested only when the user first clicks "Clip all tabs". It is needed to enumerate the window's open https tabs so each can be extracted into one combined Markdown file. If the user declines, nothing changes and the rest of the extension keeps working; tab URLs/titles are used only during that user-initiated batch operation and are never stored or transmitted.
 ```
 
 ### Justification for contextMenus
@@ -45,12 +50,17 @@ storage (chrome.storage.sync) saves the user's preferences: which YAML front-mat
 
 ### Justification for optional host permissions (https://*/*, http://localhost/*, http://127.0.0.1/*)
 ```
-Declared as OPTIONAL and requested only if the user configures a webhook destination in settings. At save time the extension requests access to the single origin of the user's own webhook URL (e.g. their n8n/Zapier/self-hosted endpoint) so it can POST the extracted Markdown there on demand. Nothing is requested at install; no origin other than the user's chosen endpoint is ever requested; declining the prompt leaves the webhook unset.
+Declared as OPTIONAL; nothing is requested at install. Two user-initiated flows request host access: (1) configuring a webhook destination requests access to the single origin of the user's own endpoint (e.g. their n8n/Zapier/self-hosted URL) so extractions can be POSTed there on demand; (2) the first use of "Clip all tabs" requests https access so the bundled extractor can run in the window's open tabs for that batch operation. Declining either prompt simply leaves that feature off.
 ```
 
 ### Justification for remote code use
 ```
-This extension does not use any remote code. All libraries (Readability.js, Turndown.js) are bundled locally within the extension package. No external scripts are loaded at runtime. Optional AI features use Chrome's built-in on-device APIs (Summarizer / Prompt) — no cloud AI services are called.
+This extension does not use any remote code. All libraries (Defuddle, Readability.js, Turndown.js) are bundled locally within the extension package. No external scripts are loaded at runtime. Optional AI features use Chrome's built-in on-device APIs (Summarizer / Prompt / Translator) — no cloud AI services are called.
+```
+
+### Privacy policy URL
+```
+https://ptm.traffko.com/privacy
 ```
 
 ### Data usage certification
