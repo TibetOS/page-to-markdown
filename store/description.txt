@@ -1,6 +1,6 @@
 Turn any web page into clean, LLM-ready Markdown — download it, copy it, or send it straight to your tools. Everything runs locally.
 
-Page to Markdown uses Mozilla's Readability engine to strip away ads, navigation, sidebars, and other noise, then converts the clean article to well-formatted Markdown with proper headings, links, images, code blocks — and even LaTeX math.
+Page to Markdown uses Defuddle — the extraction engine behind Obsidian Web Clipper, with site-specific extractors for Reddit, X, Substack, YouTube, GitHub, and more — falling back to Mozilla's Readability when needed, then converts the clean article to well-formatted Markdown with proper headings, links, images, code blocks — and even LaTeX math.
 
 WHAT YOU CAN DO
 • Extract .md — download the page as a Markdown file with rich YAML front matter
