@@ -10,9 +10,9 @@ Gal wants **short, concise chat replies**. Always.
 ## Project
 Page to Markdown — privacy-first Chrome MV3 extension: any page → clean Markdown
 (Defuddle, Readability fallback, Turndown). v1.17.0; ROADMAP.md fully delivered.
-On the Chrome Web Store (id `gkfgacenceooebncggkfcapmnleadjen`) — but the listing
-runs v1.0.0; v1.17.0 upload pending (needs `CWS_*` secrets or dashboard upload).
-Landing page live at ptm.traffko.com.
+On the Chrome Web Store (id `gkfgacenceooebncggkfcapmnleadjen`); v1.17.0 submitted
+for review 2026-08-04. `CWS_*` secrets configured — publish via GitHub release or
+the publish-cws workflow. Landing page live at ptm.traffko.com.
 
 - Build: `node scripts/build.mjs` → `dist/` zips (Chrome/Edge + Firefox). No npm deps.
 - No test suite; test manually via `chrome://extensions` → Load unpacked.
